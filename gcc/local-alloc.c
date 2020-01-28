@@ -237,31 +237,31 @@ static rtx *reg_equiv_replacement;
 /* Used for communication between update_equiv_regs and no_equiv.  */
 static rtx *reg_equiv_init_insns;
 
-static void alloc_qty		PROTO((int, enum machine_mode, int, int));
-static void validate_equiv_mem_from_store PROTO((rtx, rtx));
-static int validate_equiv_mem	PROTO((rtx, rtx, rtx));
-static int contains_replace_regs PROTO((rtx, char *));
-static int memref_referenced_p	PROTO((rtx, rtx));
-static int memref_used_between_p PROTO((rtx, rtx, rtx));
-static void update_equiv_regs	PROTO((void));
-static void no_equiv		PROTO((rtx, rtx));
-static void block_alloc		PROTO((int));
-static int qty_sugg_compare    	PROTO((int, int));
-static int qty_sugg_compare_1	PROTO((const GENERIC_PTR, const GENERIC_PTR));
-static int qty_compare    	PROTO((int, int));
-static int qty_compare_1	PROTO((const GENERIC_PTR, const GENERIC_PTR));
-static int combine_regs		PROTO((rtx, rtx, int, int, rtx, int));
-static int reg_meets_class_p	PROTO((int, enum reg_class));
-static void update_qty_class	PROTO((int, int));
-static void reg_is_set		PROTO((rtx, rtx));
-static void reg_is_born		PROTO((rtx, int));
-static void wipe_dead_reg	PROTO((rtx, int));
-static int find_free_reg	PROTO((enum reg_class, enum machine_mode,
-				       int, int, int, int, int));
-static void mark_life		PROTO((int, enum machine_mode, int));
-static void post_mark_life	PROTO((int, enum machine_mode, int, int, int));
-static int no_conflict_p	PROTO((rtx, rtx, rtx));
-static int requires_inout	PROTO((char *));
+static void alloc_qty		(int, enum machine_mode, int, int);
+static void validate_equiv_mem_from_store (rtx, rtx);
+static int validate_equiv_mem	(rtx, rtx, rtx);
+static int contains_replace_regs (rtx, char *);
+static int memref_referenced_p	(rtx, rtx);
+static int memref_used_between_p (rtx, rtx, rtx);
+static void update_equiv_regs	(void);
+static void no_equiv		(rtx, rtx);
+static void block_alloc		(int);
+static int qty_sugg_compare    	(int, int);
+static int qty_sugg_compare_1	(const void *, const void *);
+static int qty_compare    	(int, int);
+static int qty_compare_1	(const void *, const void *);
+static int combine_regs		(rtx, rtx, int, int, rtx, int);
+static int reg_meets_class_p	(int, enum reg_class);
+static void update_qty_class	(int, int);
+static void reg_is_set		(rtx, rtx);
+static void reg_is_born		(rtx, int);
+static void wipe_dead_reg	(rtx, int);
+static int find_free_reg	(enum reg_class, enum machine_mode,
+				       int, int, int, int, int);
+static void mark_life		(int, enum machine_mode, int);
+static void post_mark_life	(int, enum machine_mode, int, int, int);
+static int no_conflict_p	(rtx, rtx, rtx);
+static int requires_inout	(char *);
 
 /* Allocate a new quantity (new within current basic block)
    for register number REGNO which is born at index BIRTH
@@ -375,7 +375,7 @@ local_alloc ()
 	 vectors might need to be initialized because they were used
 	 for the previous block; it is set to the entire array before
 	 block 0.  Initialize those, with explicit loop if there are few,
-	 else with bzero and bcopy.  Do not initialize vectors that are
+	 else with zero_memory and bcopy.  Do not initialize vectors that are
 	 explicit set by `alloc_qty'.  */
 
       if (next_qty < 6)
@@ -391,7 +391,7 @@ local_alloc ()
       else
 	{
 #define CLEAR(vector)  \
-	  bzero ((char *) (vector), (sizeof (*(vector))) * next_qty);
+	  zero_memory ((char *) (vector), (sizeof (*(vector))) * next_qty);
 
 	  CLEAR (qty_phys_copy_sugg);
 	  CLEAR (qty_phys_num_copy_sugg);
@@ -667,9 +667,9 @@ update_equiv_regs ()
   reg_equiv_init_insns = (rtx *) alloca (max_regno * sizeof (rtx));
   reg_equiv_replacement = (rtx *) alloca (max_regno * sizeof (rtx));
 
-  bzero ((char *) reg_equiv_init_insns, max_regno * sizeof (rtx));
-  bzero ((char *) reg_equiv_replacement, max_regno * sizeof (rtx));
-  bzero ((char *) reg_equiv_replace, max_regno * sizeof *reg_equiv_replace);
+  zero_memory ((char *) reg_equiv_init_insns, max_regno * sizeof (rtx));
+  zero_memory ((char *) reg_equiv_replacement, max_regno * sizeof (rtx));
+  zero_memory ((char *) reg_equiv_replace, max_regno * sizeof *reg_equiv_replace);
 
   init_alias_analysis ();
 
@@ -1035,7 +1035,7 @@ block_alloc (b)
      the birth of a CLOBBER in the first insn.  */
   regs_live_at = (HARD_REG_SET *) alloca ((2 * insn_count + 2)
 					  * sizeof (HARD_REG_SET));
-  bzero ((char *) regs_live_at, (2 * insn_count + 2) * sizeof (HARD_REG_SET));
+  zero_memory ((char *) regs_live_at, (2 * insn_count + 2) * sizeof (HARD_REG_SET));
 
   /* Initialize table of hardware registers currently live.  */
 
@@ -1389,51 +1389,8 @@ block_alloc (b)
       q = qty_order[i];
       if (qty_phys_reg[q] < 0)
 	{
-#ifdef INSN_SCHEDULING
-	  /* These values represent the adjusted lifetime of a qty so
-	     that it conflicts with qtys which appear near the start/end
-	     of this qty's lifetime.
-
-	     The purpose behind extending the lifetime of this qty is to
-	     discourage the register allocator from creating false
-	     dependencies.
- 
-	     The adjustment value is choosen to indicate that this qty
-	     conflicts with all the qtys in the instructions immediately
-	     before and after the lifetime of this qty.
-
-	     Experiments have shown that higher values tend to hurt
-	     overall code performance.
-
-	     If allocation using the extended lifetime fails we will try
-	     again with the qty's unadjusted lifetime.  */
-	  int fake_birth = MAX (0, qty_birth[q] - 2 + qty_birth[q] % 2);
-	  int fake_death = MIN (insn_number * 2 + 1,
-				qty_death[q] + 2 - qty_death[q] % 2);
-#endif
-
 	  if (N_REG_CLASSES > 1)
 	    {
-#ifdef INSN_SCHEDULING
-	      /* We try to avoid using hard registers allocated to qtys which
-		 are born immediately after this qty or die immediately before
-		 this qty.
-
-		 This optimization is only appropriate when we will run
-		 a scheduling pass after reload and we are not optimizing
-		 for code size.  */
-	      if (flag_schedule_insns_after_reload
-		  && !optimize_size
-		  && !SMALL_REGISTER_CLASSES)
-		{
-		
-		  qty_phys_reg[q] = find_free_reg (qty_min_class[q], 
-						   qty_mode[q], q, 0, 0,
-						   fake_birth, fake_death);
-		  if (qty_phys_reg[q] >= 0)
-		    continue;
-		}
-#endif
 	      qty_phys_reg[q] = find_free_reg (qty_min_class[q], 
 					       qty_mode[q], q, 0, 0,
 					       qty_birth[q], qty_death[q]);
@@ -1441,16 +1398,6 @@ block_alloc (b)
 		continue;
 	    }
 
-#ifdef INSN_SCHEDULING
-	  /* Similarly, avoid false dependencies.  */
-	  if (flag_schedule_insns_after_reload
-	      && !optimize_size
-	      && !SMALL_REGISTER_CLASSES
-	      && qty_alternate_class[q] != NO_REGS)
-	    qty_phys_reg[q] = find_free_reg (qty_alternate_class[q],
-					     qty_mode[q], q, 0, 0,
-					     fake_birth, fake_death);
-#endif
 	  if (qty_alternate_class[q] != NO_REGS)
 	    qty_phys_reg[q] = find_free_reg (qty_alternate_class[q],
 					     qty_mode[q], q, 0, 0,
@@ -1498,8 +1445,8 @@ qty_compare (q1, q2)
 
 static int
 qty_compare_1 (q1p, q2p)
-     const GENERIC_PTR q1p;
-     const GENERIC_PTR q2p;
+     const void * q1p;
+     const void * q2p;
 {
   register int q1 = *(int *)q1p, q2 = *(int *)q2p;
   register int tem = QTY_CMP_PRI (q2) - QTY_CMP_PRI (q1);
@@ -1538,8 +1485,8 @@ qty_sugg_compare (q1, q2)
 
 static int
 qty_sugg_compare_1 (q1p, q2p)
-     const GENERIC_PTR q1p;
-     const GENERIC_PTR q2p;
+     const void * q1p;
+     const void * q2p;
 {
   register int q1 = *(int *)q1p, q2 = *(int *)q2p;
   register int tem = QTY_CMP_SUGG (q1) - QTY_CMP_SUGG (q2);
@@ -1967,17 +1914,8 @@ find_free_reg (class, mode, qty, accept_call_clobbered, just_try_suggested,
      to another hard reg.  It can move only regs made by global-alloc.
 
      This is true of any register that can be eliminated.  */
-#ifdef ELIMINABLE_REGS
   for (i = 0; i < (int)(sizeof eliminables / sizeof eliminables[0]); i++)
     SET_HARD_REG_BIT (used, eliminables[i].from);
-#if FRAME_POINTER_REGNUM != HARD_FRAME_POINTER_REGNUM
-  /* If FRAME_POINTER_REGNUM is not a real register, then protect the one
-     that it might be eliminated into.  */
-  SET_HARD_REG_BIT (used, HARD_FRAME_POINTER_REGNUM);
-#endif
-#else
-  SET_HARD_REG_BIT (used, FRAME_POINTER_REGNUM);
-#endif
 
 #ifdef CLASS_CANNOT_CHANGE_SIZE
   if (qty_changes_size[qty])
@@ -2008,11 +1946,7 @@ find_free_reg (class, mode, qty, accept_call_clobbered, just_try_suggested,
 
   for (i = 0; i < FIRST_PSEUDO_REGISTER; i++)
     {
-#ifdef REG_ALLOC_ORDER
-      int regno = reg_alloc_order[i];
-#else
       int regno = i;
-#endif
       if (! TEST_HARD_REG_BIT (first_used, regno)
 	  && HARD_REGNO_MODE_OK (regno, mode)
 	  && (qty_n_calls_crossed[qty] == 0
@@ -2029,9 +1963,7 @@ find_free_reg (class, mode, qty, accept_call_clobbered, just_try_suggested,
 	      post_mark_life (regno, mode, 1, born_index, dead_index);
 	      return regno;
 	    }
-#ifndef REG_ALLOC_ORDER
 	  i += j;		/* Skip starting points we know will lose */
-#endif
 	}
     }
 

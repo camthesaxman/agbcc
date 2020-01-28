@@ -136,20 +136,12 @@ REAL_VALUE_TYPE dconstm1;
    But references that were originally to the frame-pointer can be
    distinguished from the others because they contain frame_pointer_rtx.
 
-   When to use frame_pointer_rtx and hard_frame_pointer_rtx is a little
-   tricky: until register elimination has taken place hard_frame_pointer_rtx
-   should be used if it is being set, and frame_pointer_rtx otherwise.  After 
-   register elimination hard_frame_pointer_rtx should always be used.
-   On machines where the two registers are same (most) then these are the
-   same.
-
    In an inline procedure, the stack and frame pointer rtxs may not be
    used for anything else.  */
 rtx struct_value_rtx;		/* (REG:Pmode STRUCT_VALUE_REGNUM) */
 rtx struct_value_incoming_rtx;	/* (REG:Pmode STRUCT_VALUE_INCOMING_REGNUM) */
 rtx static_chain_rtx;		/* (REG:Pmode STATIC_CHAIN_REGNUM) */
 rtx static_chain_incoming_rtx;	/* (REG:Pmode STATIC_CHAIN_INCOMING_REGNUM) */
-rtx pic_offset_table_rtx;	/* (REG:Pmode PIC_OFFSET_TABLE_REGNUM) */
 
 /* This is used to implement __builtin_return_address for some machines.
    See for instance the MIPS port.  */
@@ -244,9 +236,9 @@ extern int rtx_equal_function_value_matters;
 extern char *emit_filename;
 extern int emit_lineno;
 
-static rtx make_jump_insn_raw		PROTO((rtx));
-static rtx make_call_insn_raw		PROTO((rtx));
-static rtx find_line_note		PROTO((rtx));
+static rtx make_jump_insn_raw		(rtx);
+static rtx make_call_insn_raw		(rtx);
+static rtx find_line_note		(rtx);
 
 rtx
 gen_rtx_CONST_INT (mode, arg)
@@ -287,14 +279,8 @@ gen_rtx_REG (mode, regno)
     {
       if (regno == FRAME_POINTER_REGNUM)
 	return frame_pointer_rtx;
-#if FRAME_POINTER_REGNUM != HARD_FRAME_POINTER_REGNUM
-      if (regno == HARD_FRAME_POINTER_REGNUM)
-	return hard_frame_pointer_rtx;
-#endif
-#if FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM && HARD_FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM
       if (regno == ARG_POINTER_REGNUM)
 	return arg_pointer_rtx;
-#endif
 #ifdef RETURN_ADDRESS_POINTER_REGNUM
       if (regno == RETURN_ADDRESS_POINTER_REGNUM)
 	return return_address_pointer_rtx;
@@ -348,23 +334,15 @@ gen_rtx_MEM (mode, addr)
 
 /*VARARGS2*/
 rtx
-gen_rtx VPROTO((enum rtx_code code, enum machine_mode mode, ...))
+gen_rtx (enum rtx_code code, enum machine_mode mode, ...)
 {
-#ifndef ANSI_PROTOTYPES
-  enum rtx_code code;
-  enum machine_mode mode;
-#endif
   va_list p;
   register int i;		/* Array indices...			*/
   register char *fmt;		/* Current rtx's format...		*/
   register rtx rt_val;		/* RTX to return to caller...		*/
 
-  VA_START (p, mode);
+  va_start (p, mode);
 
-#ifndef ANSI_PROTOTYPES
-  code = va_arg (p, enum rtx_code);
-  mode = va_arg (p, enum machine_mode);
-#endif
 
   if (code == CONST_INT)
     rt_val = gen_rtx_CONST_INT (mode, va_arg (p, HOST_WIDE_INT));
@@ -431,20 +409,14 @@ gen_rtx VPROTO((enum rtx_code code, enum machine_mode mode, ...))
 
 /*VARARGS1*/
 rtvec
-gen_rtvec VPROTO((int n, ...))
+gen_rtvec (int n, ...)
 {
-#ifndef ANSI_PROTOTYPES
-  int n;
-#endif
   int i;
   va_list p;
   rtx *vector;
 
-  VA_START (p, n);
+  va_start (p, n);
 
-#ifndef ANSI_PROTOTYPES
-  n = va_arg (p, int);
-#endif
 
   if (n == 0)
     return NULL_RTVEC;		/* Don't allocate an empty rtvec...	*/
@@ -539,19 +511,19 @@ gen_reg_rtx (mode)
       rtx *new1;
       char *new =
 	(char *) savealloc (regno_pointer_flag_length * 2);
-      bcopy (regno_pointer_flag, new, regno_pointer_flag_length);
-      bzero (&new[regno_pointer_flag_length], regno_pointer_flag_length);
+      copy_memory (regno_pointer_flag, new, regno_pointer_flag_length);
+      zero_memory (&new[regno_pointer_flag_length], regno_pointer_flag_length);
       regno_pointer_flag = new;
 
       new = (char *) savealloc (regno_pointer_flag_length * 2);
-      bcopy (regno_pointer_align, new, regno_pointer_flag_length);
-      bzero (&new[regno_pointer_flag_length], regno_pointer_flag_length);
+      copy_memory (regno_pointer_align, new, regno_pointer_flag_length);
+      zero_memory (&new[regno_pointer_flag_length], regno_pointer_flag_length);
       regno_pointer_align = new;
 
       new1 = (rtx *) savealloc (regno_pointer_flag_length * 2 * sizeof (rtx));
-      bcopy ((char *) regno_reg_rtx, (char *) new1,
+      copy_memory ((char *) regno_reg_rtx, (char *) new1,
 	     regno_pointer_flag_length * sizeof (rtx));
-      bzero ((char *) &new1[regno_pointer_flag_length],
+      zero_memory ((char *) &new1[regno_pointer_flag_length],
 	     regno_pointer_flag_length * sizeof (rtx));
       regno_reg_rtx = new1;
 
@@ -648,14 +620,8 @@ gen_lowpart_common (mode, x)
 	     / UNITS_PER_WORD)))
     return 0;
 
-  if (WORDS_BIG_ENDIAN && GET_MODE_SIZE (GET_MODE (x)) > UNITS_PER_WORD)
-    word = ((GET_MODE_SIZE (GET_MODE (x))
-	     - MAX (GET_MODE_SIZE (mode), UNITS_PER_WORD))
-	    / UNITS_PER_WORD);
-
   if ((GET_CODE (x) == ZERO_EXTEND || GET_CODE (x) == SIGN_EXTEND)
-      && (GET_MODE_CLASS (mode) == MODE_INT
-	  || GET_MODE_CLASS (mode) == MODE_PARTIAL_INT))
+      && GET_MODE_CLASS (mode) == MODE_INT)
     {
       /* If we are getting the low-order part of something that has been
 	 sign- or zero-extended, we can either just use the object being
@@ -687,10 +653,6 @@ gen_lowpart_common (mode, x)
 	 regs are sized by the underlying register size.  Better would be
 	 to always interpret the subreg offset parameter as bytes or bits.  */
 
-      if (WORDS_BIG_ENDIAN && REGNO (x) < FIRST_PSEUDO_REGISTER)
-	word = (HARD_REGNO_NREGS (REGNO (x), GET_MODE (x))
-		- HARD_REGNO_NREGS (REGNO (x), mode));
-
       /* If the register is not valid for MODE, return 0.  If we don't
 	 do this, there is no way to fix up the resulting REG later.  
 	 But we do do this if the current REG is not valid for its
@@ -716,9 +678,7 @@ gen_lowpart_common (mode, x)
 	       /* We want to keep the stack, frame, and arg pointers
 		  special.  */
 	       && x != frame_pointer_rtx
-#if FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM
 	       && x != arg_pointer_rtx
-#endif
 	       && x != stack_pointer_rtx)
 	return gen_rtx_REG (mode, REGNO (x) + word);
       else
@@ -726,8 +686,7 @@ gen_lowpart_common (mode, x)
     }
   /* If X is a CONST_INT or a CONST_DOUBLE, extract the appropriate bits
      from the low-order part of the constant.  */
-  else if ((GET_MODE_CLASS (mode) == MODE_INT
-	    || GET_MODE_CLASS (mode) == MODE_PARTIAL_INT)
+  else if (GET_MODE_CLASS (mode) == MODE_INT
 	   && GET_MODE (x) == VOIDmode
 	   && (GET_CODE (x) == CONST_INT || GET_CODE (x) == CONST_DOUBLE))
     {
@@ -800,7 +759,6 @@ gen_lowpart_common (mode, x)
 	   && GET_MODE (x) == VOIDmode
 	   && (sizeof (double) * HOST_BITS_PER_CHAR
 	       == 2 * HOST_BITS_PER_WIDE_INT))
-#ifdef REAL_ARITHMETIC
     {
       REAL_VALUE_TYPE r;
       HOST_WIDE_INT i[2];
@@ -813,33 +771,11 @@ gen_lowpart_common (mode, x)
 
       /* REAL_VALUE_TARGET_DOUBLE takes the addressing order of the
 	 target machine.  */
-      if (WORDS_BIG_ENDIAN)
-	i[0] = high, i[1] = low;
-      else
 	i[0] = low, i[1] = high;
 
       r = REAL_VALUE_FROM_TARGET_DOUBLE (i);
       return CONST_DOUBLE_FROM_REAL_VALUE (r, mode);
     }
-#else
-    {
-      union {HOST_WIDE_INT i[2]; double d; } u;
-      HOST_WIDE_INT low, high;
-
-      if (GET_CODE (x) == CONST_INT)
-	low = INTVAL (x), high = low >> (HOST_BITS_PER_WIDE_INT -1);
-      else
-	low = CONST_DOUBLE_LOW (x), high = CONST_DOUBLE_HIGH (x);
-
-#ifdef HOST_WORDS_BIG_ENDIAN
-      u.i[0] = high, u.i[1] = low;
-#else
-      u.i[0] = low, u.i[1] = high;
-#endif
-
-      return CONST_DOUBLE_FROM_REAL_VALUE (u.d, mode);
-    }
-#endif
 
   /* We need an extra case for machines where HOST_BITS_PER_WIDE_INT is the
      same as sizeof (double) or when sizeof (float) is larger than the
@@ -863,8 +799,7 @@ gen_lowpart_common (mode, x)
   else if (((HOST_FLOAT_FORMAT == TARGET_FLOAT_FORMAT
 	     && HOST_BITS_PER_WIDE_INT == BITS_PER_WORD)
 	    || flag_pretend_float)
-	   && (GET_MODE_CLASS (mode) == MODE_INT
-	       || GET_MODE_CLASS (mode) == MODE_PARTIAL_INT)
+	   && GET_MODE_CLASS (mode) == MODE_INT
 	   && GET_CODE (x) == CONST_DOUBLE
 	   && GET_MODE_CLASS (GET_MODE (x)) == MODE_FLOAT
 	   && GET_MODE_BITSIZE (mode) == BITS_PER_WORD)
@@ -878,16 +813,15 @@ gen_lowpart_common (mode, x)
   else if (((HOST_FLOAT_FORMAT == TARGET_FLOAT_FORMAT
 	     && HOST_BITS_PER_WIDE_INT == BITS_PER_WORD)
 	    || flag_pretend_float)
-	   && (GET_MODE_CLASS (mode) == MODE_INT
-	       || GET_MODE_CLASS (mode) == MODE_PARTIAL_INT)
+	   && GET_MODE_CLASS (mode) == MODE_INT
 	   && GET_CODE (x) == CONST_DOUBLE
 	   && GET_MODE_CLASS (GET_MODE (x)) == MODE_FLOAT
 	   && GET_MODE_BITSIZE (mode) == 2 * BITS_PER_WORD)
     {
       rtx lowpart
-	= operand_subword (x, word + WORDS_BIG_ENDIAN, 0, GET_MODE (x));
+	= operand_subword (x, word, 0, GET_MODE (x));
       rtx highpart
-	= operand_subword (x, word + ! WORDS_BIG_ENDIAN, 0, GET_MODE (x));
+	= operand_subword (x, word + 1, 0, GET_MODE (x));
 
       if (lowpart && GET_CODE (lowpart) == CONST_INT
 	  && highpart && GET_CODE (highpart) == CONST_INT)
@@ -908,8 +842,6 @@ gen_realpart (mode, x)
 {
   if (GET_CODE (x) == CONCAT && GET_MODE (XEXP (x, 0)) == mode)
     return XEXP (x, 0);
-  else if (WORDS_BIG_ENDIAN)
-    return gen_highpart (mode, x);
   else
     return gen_lowpart (mode, x);
 }
@@ -924,8 +856,6 @@ gen_imagpart (mode, x)
 {
   if (GET_CODE (x) == CONCAT && GET_MODE (XEXP (x, 0)) == mode)
     return XEXP (x, 1);
-  else if (WORDS_BIG_ENDIAN)
-    return gen_lowpart (mode, x);
   else
     return gen_highpart (mode, x);
 }
@@ -973,15 +903,6 @@ gen_lowpart (mode, x)
     {
       /* The only additional case we can do is MEM.  */
       register int offset = 0;
-      if (WORDS_BIG_ENDIAN)
-	offset = (MAX (GET_MODE_SIZE (GET_MODE (x)), UNITS_PER_WORD)
-		  - MAX (GET_MODE_SIZE (mode), UNITS_PER_WORD));
-
-      if (BYTES_BIG_ENDIAN)
-	/* Adjust the address so that the address-after-the-data
-	   is unchanged.  */
-	offset -= (MIN (UNITS_PER_WORD, GET_MODE_SIZE (mode))
-		   - MIN (UNITS_PER_WORD, GET_MODE_SIZE (GET_MODE (x))));
 
       return change_address (x, mode, plus_constant (XEXP (x, 0), offset));
     }
@@ -1019,12 +940,11 @@ gen_highpart (mode, x)
   else if (GET_CODE (x) == MEM)
     {
       register int offset = 0;
-      if (! WORDS_BIG_ENDIAN)
+
 	offset = (MAX (GET_MODE_SIZE (GET_MODE (x)), UNITS_PER_WORD)
 		  - MAX (GET_MODE_SIZE (mode), UNITS_PER_WORD));
 
-      if (! BYTES_BIG_ENDIAN
-	  && GET_MODE_SIZE (mode) < UNITS_PER_WORD)
+      if (GET_MODE_SIZE (mode) < UNITS_PER_WORD)
 	offset -= (GET_MODE_SIZE (mode)
 		   - MIN (UNITS_PER_WORD,
 			  GET_MODE_SIZE (GET_MODE (x))));
@@ -1051,9 +971,7 @@ gen_highpart (mode, x)
 	 regs are sized by the underlying register size.  Better would be
 	 to always interpret the subreg offset parameter as bytes or bits.  */
 
-      if (WORDS_BIG_ENDIAN)
-	word = 0;
-      else if (REGNO (x) < FIRST_PSEUDO_REGISTER)
+      if (REGNO (x) < FIRST_PSEUDO_REGISTER)
 	word = (HARD_REGNO_NREGS (REGNO (x), GET_MODE (x))
 		- HARD_REGNO_NREGS (REGNO (x), mode));
       else
@@ -1067,9 +985,7 @@ gen_highpart (mode, x)
 	      || ! rtx_equal_function_value_matters)
 	  /* We want to keep the stack, frame, and arg pointers special.  */
 	  && x != frame_pointer_rtx
-#if FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM
 	  && x != arg_pointer_rtx
-#endif
 	  && x != stack_pointer_rtx)
 	return gen_rtx_REG (mode, REGNO (x) + word);
       else
@@ -1091,13 +1007,6 @@ subreg_lowpart_p (x)
     return 1;
   else if (GET_MODE (SUBREG_REG (x)) == VOIDmode)
     return 0;
-
-  if (WORDS_BIG_ENDIAN
-      && GET_MODE_SIZE (GET_MODE (SUBREG_REG (x))) > UNITS_PER_WORD)
-    return (SUBREG_WORD (x)
-	    == ((GET_MODE_SIZE (GET_MODE (SUBREG_REG (x)))
-		 - MAX (GET_MODE_SIZE (GET_MODE (x)), UNITS_PER_WORD))
-		/ UNITS_PER_WORD));
 
   return SUBREG_WORD (x) == 0;
 }
@@ -1165,9 +1074,7 @@ operand_subword (op, i, validate_address, mode)
 	       /* We want to keep the stack, frame, and arg pointers
 		  special.  */
 	       || op == frame_pointer_rtx
-#if FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM
 	       || op == arg_pointer_rtx
-#endif
 	       || op == stack_pointer_rtx)
 	return gen_rtx_SUBREG (word_mode, op, i);
       else
@@ -1217,7 +1124,7 @@ operand_subword (op, i, validate_address, mode)
      constants are easy.  Note that REAL_VALUE_TO_TARGET_{SINGLE,DOUBLE}
      are defined as returning one or two 32 bit values, respectively,
      and not values of BITS_PER_WORD bits.  */
-#ifdef REAL_ARITHMETIC
+
 /*  The output is some bits, the width of the target machine's word.
     A wider-word host can surely hold them in a CONST_INT. A narrower-word
     host can't.  */
@@ -1232,70 +1139,12 @@ operand_subword (op, i, validate_address, mode)
       REAL_VALUE_FROM_CONST_DOUBLE (rv, op);
       REAL_VALUE_TO_TARGET_DOUBLE (rv, k);
 
-      /* We handle 32-bit and >= 64-bit words here.  Note that the order in
-	 which the words are written depends on the word endianness.
-
-	 ??? This is a potential portability problem and should
-	 be fixed at some point.  */
-      if (BITS_PER_WORD == 32)
-	return GEN_INT ((HOST_WIDE_INT) k[i]);
-#if HOST_BITS_PER_WIDE_INT > 32
-      else if (BITS_PER_WORD >= 64 && i == 0)
-	return GEN_INT ((((HOST_WIDE_INT) k[! WORDS_BIG_ENDIAN]) << 32)
-			| (HOST_WIDE_INT) k[WORDS_BIG_ENDIAN]);
-#endif
-      else if (BITS_PER_WORD == 16)
-	{
-	  long value;
-	  value = k[i >> 1];
-	  if ((i & 0x1) == !WORDS_BIG_ENDIAN)
-	    value >>= 16;
-	  value &= 0xffff;
-	  return GEN_INT ((HOST_WIDE_INT) value);
-	}
-      else
-	abort ();
-    }
-  else if (HOST_BITS_PER_WIDE_INT >= BITS_PER_WORD
-	   && GET_MODE_CLASS (mode) == MODE_FLOAT
-	   && GET_MODE_BITSIZE (mode) > 64
-	   && GET_CODE (op) == CONST_DOUBLE)
-  {
-    long k[4];
-    REAL_VALUE_TYPE rv;
-
-    REAL_VALUE_FROM_CONST_DOUBLE (rv, op);
-    REAL_VALUE_TO_TARGET_LONG_DOUBLE (rv, k);
-
-    if (BITS_PER_WORD == 32)
       return GEN_INT ((HOST_WIDE_INT) k[i]);
-  }
-#else /* no REAL_ARITHMETIC */
-  if (((HOST_FLOAT_FORMAT == TARGET_FLOAT_FORMAT
-	&& HOST_BITS_PER_WIDE_INT == BITS_PER_WORD)
-       || flag_pretend_float)
-      && GET_MODE_CLASS (mode) == MODE_FLOAT
-      && GET_MODE_SIZE (mode) == 2 * UNITS_PER_WORD
-      && GET_CODE (op) == CONST_DOUBLE)
-    {
-      /* The constant is stored in the host's word-ordering,
-	 but we want to access it in the target's word-ordering.  Some
-	 compilers don't like a conditional inside macro args, so we have two
-	 copies of the return.  */
-#ifdef HOST_WORDS_BIG_ENDIAN
-      return GEN_INT (i == WORDS_BIG_ENDIAN
-		      ? CONST_DOUBLE_HIGH (op) : CONST_DOUBLE_LOW (op));
-#else
-      return GEN_INT (i != WORDS_BIG_ENDIAN
-		      ? CONST_DOUBLE_HIGH (op) : CONST_DOUBLE_LOW (op));
-#endif
     }
-#endif /* no REAL_ARITHMETIC */
 
   /* Single word float is a little harder, since single- and double-word
      values often do not have the same high-order bits.  We have already
      verified that we want the only defined word of the single-word value.  */
-#ifdef REAL_ARITHMETIC
   if (GET_MODE_CLASS (mode) == MODE_FLOAT
       && GET_MODE_BITSIZE (mode) == 32
       && GET_CODE (op) == CONST_DOUBLE)
@@ -1306,48 +1155,8 @@ operand_subword (op, i, validate_address, mode)
       REAL_VALUE_FROM_CONST_DOUBLE (rv, op);
       REAL_VALUE_TO_TARGET_SINGLE (rv, l);
 
-      if (BITS_PER_WORD == 16)
-	{
-	  if ((i & 0x1) == !WORDS_BIG_ENDIAN)
-	    l >>= 16;
-	  l &= 0xffff;
-	}
       return GEN_INT ((HOST_WIDE_INT) l);
     }
-#else
-  if (((HOST_FLOAT_FORMAT == TARGET_FLOAT_FORMAT
-	&& HOST_BITS_PER_WIDE_INT == BITS_PER_WORD)
-       || flag_pretend_float)
-      && sizeof (float) * 8 == HOST_BITS_PER_WIDE_INT
-      && GET_MODE_CLASS (mode) == MODE_FLOAT
-      && GET_MODE_SIZE (mode) == UNITS_PER_WORD
-      && GET_CODE (op) == CONST_DOUBLE)
-    {
-      double d;
-      union {float f; HOST_WIDE_INT i; } u;
-
-      REAL_VALUE_FROM_CONST_DOUBLE (d, op);
-
-      u.f = d;
-      return GEN_INT (u.i);
-    }
-  if (((HOST_FLOAT_FORMAT == TARGET_FLOAT_FORMAT
-	&& HOST_BITS_PER_WIDE_INT == BITS_PER_WORD)
-       || flag_pretend_float)
-      && sizeof (double) * 8 == HOST_BITS_PER_WIDE_INT
-      && GET_MODE_CLASS (mode) == MODE_FLOAT
-      && GET_MODE_SIZE (mode) == UNITS_PER_WORD
-      && GET_CODE (op) == CONST_DOUBLE)
-    {
-      double d;
-      union {double d; HOST_WIDE_INT i; } u;
-
-      REAL_VALUE_FROM_CONST_DOUBLE (d, op);
-
-      u.d = d;
-      return GEN_INT (u.i);
-    }
-#endif /* no REAL_ARITHMETIC */
       
   /* The only remaining cases that we can handle are integers.
      Convert to proper endianness now since these cases need it.
@@ -1364,9 +1173,6 @@ operand_subword (op, i, validate_address, mode)
       || (GET_CODE (op) != CONST_INT && GET_CODE (op) != CONST_DOUBLE)
       || BITS_PER_WORD > HOST_BITS_PER_WIDE_INT)
     return 0;
-
-  if (WORDS_BIG_ENDIAN)
-    i = GET_MODE_SIZE (mode) / UNITS_PER_WORD - 1 - i;
 
   /* Find out which word on the host machine this value is in and get
      it from the constant.  */
@@ -1521,7 +1327,7 @@ gen_label_rtx ()
   register rtx label;
 
   label = gen_rtx_CODE_LABEL (VOIDmode, 0, NULL_RTX,
-			      NULL_RTX, label_num++, NULL_PTR);
+			      NULL_RTX, label_num++, NULL);
 
   LABEL_NUSES (label) = 0;
   return label;
@@ -1767,7 +1573,7 @@ copy_rtx_if_shared (orig)
       register rtx copy;
 
       copy = rtx_alloc (code);
-      bcopy ((char *) x, (char *) copy,
+      copy_memory ((char *) x, (char *) copy,
 	     (sizeof (*copy) - sizeof (copy->fld)
 	      + sizeof (copy->fld[0]) * GET_RTX_LENGTH (code)));
       x = copy;
@@ -3408,15 +3214,15 @@ init_emit ()
 
   regno_pointer_flag 
     = (char *) savealloc (regno_pointer_flag_length);
-  bzero (regno_pointer_flag, regno_pointer_flag_length);
+  zero_memory (regno_pointer_flag, regno_pointer_flag_length);
 
   regno_pointer_align
     = (char *) savealloc (regno_pointer_flag_length);
-  bzero (regno_pointer_align, regno_pointer_flag_length);
+  zero_memory (regno_pointer_align, regno_pointer_flag_length);
 
   regno_reg_rtx 
     = (rtx *) savealloc (regno_pointer_flag_length * sizeof (rtx));
-  bzero ((char *) regno_reg_rtx, regno_pointer_flag_length * sizeof (rtx));
+  zero_memory ((char *) regno_reg_rtx, regno_pointer_flag_length * sizeof (rtx));
 
   /* Put copies of all the virtual register rtx into regno_reg_rtx.  */
   init_virtual_regs ();
@@ -3425,7 +3231,6 @@ init_emit ()
      all pointers.  */
   REGNO_POINTER_FLAG (STACK_POINTER_REGNUM) = 1;
   REGNO_POINTER_FLAG (FRAME_POINTER_REGNUM) = 1;
-  REGNO_POINTER_FLAG (HARD_FRAME_POINTER_REGNUM) = 1;
   REGNO_POINTER_FLAG (ARG_POINTER_REGNUM) = 1;
 
   REGNO_POINTER_FLAG (VIRTUAL_INCOMING_ARGS_REGNUM) = 1;
@@ -3437,8 +3242,6 @@ init_emit ()
 #ifdef STACK_BOUNDARY
   REGNO_POINTER_ALIGN (STACK_POINTER_REGNUM) = STACK_BOUNDARY / BITS_PER_UNIT;
   REGNO_POINTER_ALIGN (FRAME_POINTER_REGNUM) = STACK_BOUNDARY / BITS_PER_UNIT;
-  REGNO_POINTER_ALIGN (HARD_FRAME_POINTER_REGNUM)
-    = STACK_BOUNDARY / BITS_PER_UNIT;
   REGNO_POINTER_ALIGN (ARG_POINTER_REGNUM) = STACK_BOUNDARY / BITS_PER_UNIT;
 
   REGNO_POINTER_ALIGN (VIRTUAL_INCOMING_ARGS_REGNUM)
@@ -3532,10 +3335,12 @@ init_emit_once (line_numbers)
 	  rtx tem = rtx_alloc (CONST_DOUBLE);
 	  union real_extract u;
 
-	  bzero ((char *) &u, sizeof u);  /* Zero any holes in a structure.  */
+	  zero_memory ((char *) &u, sizeof u);  /* Zero any holes in a structure.  */
 	  u.d = i == 0 ? dconst0 : i == 1 ? dconst1 : dconst2;
 
-	  bcopy ((char *) &u, (char *) &CONST_DOUBLE_LOW (tem), sizeof u);
+    for (int j = 0; j < sizeof (REAL_VALUE_TYPE) / sizeof (HOST_WIDE_INT); j++)
+        XWINT(tem, 2 + j) = u.i[j];
+
 	  CONST_DOUBLE_MEM (tem) = cc0_rtx;
 	  PUT_MODE (tem, mode);
 
@@ -3545,11 +3350,6 @@ init_emit_once (line_numbers)
       const_tiny_rtx[i][(int) VOIDmode] = GEN_INT (i);
 
       for (mode = GET_CLASS_NARROWEST_MODE (MODE_INT); mode != VOIDmode;
-	   mode = GET_MODE_WIDER_MODE (mode))
-	const_tiny_rtx[i][(int) mode] = GEN_INT (i);
-
-      for (mode = GET_CLASS_NARROWEST_MODE (MODE_PARTIAL_INT);
-	   mode != VOIDmode;
 	   mode = GET_MODE_WIDER_MODE (mode))
 	const_tiny_rtx[i][(int) mode] = GEN_INT (i);
     }
@@ -3567,14 +3367,8 @@ init_emit_once (line_numbers)
   PUT_MODE (stack_pointer_rtx, Pmode);
   REGNO (frame_pointer_rtx) = FRAME_POINTER_REGNUM;
   PUT_MODE (frame_pointer_rtx, Pmode);
-#if HARD_FRAME_POINTER_REGNUM != FRAME_POINTER_REGNUM
-  REGNO (hard_frame_pointer_rtx) = HARD_FRAME_POINTER_REGNUM;
-  PUT_MODE (hard_frame_pointer_rtx, Pmode);
-#endif
-#if FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM && HARD_FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM
   REGNO (arg_pointer_rtx) = ARG_POINTER_REGNUM;
   PUT_MODE (arg_pointer_rtx, Pmode);
-#endif
 
   REGNO (virtual_incoming_args_rtx) = VIRTUAL_INCOMING_ARGS_REGNUM;
   PUT_MODE (virtual_incoming_args_rtx, Pmode);
@@ -3630,9 +3424,6 @@ init_emit_once (line_numbers)
 #endif
 #endif
 
-#ifdef PIC_OFFSET_TABLE_REGNUM
-  pic_offset_table_rtx = gen_rtx_REG (Pmode, PIC_OFFSET_TABLE_REGNUM);
-#endif
 
 #ifdef INIT_EXPANDERS
   /* This is to initialize save_machine_status and restore_machine_status before

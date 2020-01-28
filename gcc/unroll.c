@@ -192,21 +192,21 @@ static int *splittable_regs_updates;
 
 /* Forward declarations.  */
 
-static void init_reg_map PROTO((struct inline_remap *, int));
-static rtx calculate_giv_inc PROTO((rtx, rtx, int));
-static rtx initial_reg_note_copy PROTO((rtx, struct inline_remap *));
-static void final_reg_note_copy PROTO((rtx, struct inline_remap *));
-static void copy_loop_body PROTO((rtx, rtx, struct inline_remap *, rtx, int,
-				  enum unroll_types, rtx, rtx, rtx, rtx));
-static void iteration_info PROTO((rtx, rtx *, rtx *, rtx, rtx));
-static int find_splittable_regs PROTO((enum unroll_types, rtx, rtx, rtx, int,
-				       unsigned HOST_WIDE_INT));
-static int find_splittable_givs PROTO((struct iv_class *, enum unroll_types,
-				       rtx, rtx, rtx, int));
-static int reg_dead_after_loop PROTO((rtx, rtx, rtx));
-static rtx fold_rtx_mult_add PROTO((rtx, rtx, rtx, enum machine_mode));
-static int verify_addresses PROTO((struct induction *, rtx, int));
-static rtx remap_split_bivs PROTO((rtx));
+static void init_reg_map (struct inline_remap *, int);
+static rtx calculate_giv_inc (rtx, rtx, int);
+static rtx initial_reg_note_copy (rtx, struct inline_remap *);
+static void final_reg_note_copy (rtx, struct inline_remap *);
+static void copy_loop_body (rtx, rtx, struct inline_remap *, rtx, int,
+				  enum unroll_types, rtx, rtx, rtx, rtx);
+static void iteration_info (rtx, rtx *, rtx *, rtx, rtx);
+static int find_splittable_regs (enum unroll_types, rtx, rtx, rtx, int,
+				       HOST_WIDE_UINT);
+static int find_splittable_givs (struct iv_class *, enum unroll_types,
+				       rtx, rtx, rtx, int);
+static int reg_dead_after_loop (rtx, rtx, rtx);
+static rtx fold_rtx_mult_add (rtx, rtx, rtx, enum machine_mode);
+static int verify_addresses (struct induction *, rtx, int);
+static rtx remap_split_bivs (rtx);
 
 /* Try to unroll one loop and split induction variables in the loop.
 
@@ -238,7 +238,9 @@ unroll_loop (loop_end, insn_count, loop_start, end_insert_before,
   struct inline_remap *map;
   char *local_label;
   char *local_regno;
+#ifndef OLD_COMPILER
   int max_local_regnum;
+#endif
   int maxregnum;
   int new_maxregnum;
   rtx exit_label = 0;
@@ -693,7 +695,7 @@ unroll_loop (loop_end, insn_count, loop_start, end_insert_before,
       map->label_map = (rtx *) alloca (max_labelno * sizeof (rtx));
 
       local_label = (char *) alloca (max_labelno);
-      bzero (local_label, max_labelno);
+      zero_memory (local_label, max_labelno);
     }
   else
     map->label_map = 0;
@@ -756,8 +758,10 @@ unroll_loop (loop_end, insn_count, loop_start, end_insert_before,
   /* The preconditioning code may allocate two new pseudo registers.  */
   maxregnum = max_reg_num ();
 
+#ifndef OLD_COMPILER
   /* local_regno is only valid for regnos < max_local_regnum.  */
   max_local_regnum = maxregnum;
+#endif
 
   /* Allocate and zero out the splittable_regs and addr_combined_regs
      arrays.  These must be zeroed here because they will be used if
@@ -768,16 +772,16 @@ unroll_loop (loop_end, insn_count, loop_start, end_insert_before,
      to access the splittable_regs[] and addr_combined_regs[] arrays.  */
 
   splittable_regs = (rtx *) alloca (maxregnum * sizeof (rtx));
-  bzero ((char *) splittable_regs, maxregnum * sizeof (rtx));
+  zero_memory ((char *) splittable_regs, maxregnum * sizeof (rtx));
   derived_regs = alloca (maxregnum);
-  bzero (derived_regs, maxregnum);
+  zero_memory (derived_regs, maxregnum);
   splittable_regs_updates = (int *) alloca (maxregnum * sizeof (int));
-  bzero ((char *) splittable_regs_updates, maxregnum * sizeof (int));
+  zero_memory ((char *) splittable_regs_updates, maxregnum * sizeof (int));
   addr_combined_regs
     = (struct induction **) alloca (maxregnum * sizeof (struct induction *));
-  bzero ((char *) addr_combined_regs, maxregnum * sizeof (struct induction *));
+  zero_memory ((char *) addr_combined_regs, maxregnum * sizeof (struct induction *));
   local_regno = (char *) alloca (maxregnum);
-  bzero (local_regno, maxregnum);
+  zero_memory (local_regno, maxregnum);
 
   /* Mark all local registers, i.e. the ones which are referenced only
      inside the loop.  */
@@ -1048,9 +1052,9 @@ unroll_loop (loop_end, insn_count, loop_start, end_insert_before,
 	      emit_label_after (labels[unroll_number - i],
 				PREV_INSN (loop_start));
 
-	      bzero ((char *) map->insn_map, max_insnno * sizeof (rtx));
-	      bzero ((char *) map->const_equiv_map, maxregnum * sizeof (rtx));
-	      bzero ((char *) map->const_age_map,
+	      zero_memory ((char *) map->insn_map, max_insnno * sizeof (rtx));
+	      zero_memory ((char *) map->const_equiv_map, maxregnum * sizeof (rtx));
+	      zero_memory ((char *) map->const_age_map,
 		     maxregnum * sizeof (unsigned));
 	      map->const_age = 0;
 
@@ -1058,7 +1062,11 @@ unroll_loop (loop_end, insn_count, loop_start, end_insert_before,
 		if (local_label[j])
 		  set_label_in_map (map, j, gen_label_rtx ());
 
+#ifndef OLD_COMPILER
 	      for (j = FIRST_PSEUDO_REGISTER; j < max_local_regnum; j++)
+#else
+	      for (j = FIRST_PSEUDO_REGISTER; j < maxregnum; j++)
+#endif
 		if (local_regno[j])
 		  {
 		    map->reg_map[j] = gen_reg_rtx (GET_MODE (regno_reg_rtx[j]));
@@ -1205,16 +1213,20 @@ unroll_loop (loop_end, insn_count, loop_start, end_insert_before,
 
   for (i = 0; i < unroll_number; i++)
     {
-      bzero ((char *) map->insn_map, max_insnno * sizeof (rtx));
-      bzero ((char *) map->const_equiv_map, new_maxregnum * sizeof (rtx));
-      bzero ((char *) map->const_age_map, new_maxregnum * sizeof (unsigned));
+      zero_memory ((char *) map->insn_map, max_insnno * sizeof (rtx));
+      zero_memory ((char *) map->const_equiv_map, new_maxregnum * sizeof (rtx));
+      zero_memory ((char *) map->const_age_map, new_maxregnum * sizeof (unsigned));
       map->const_age = 0;
 
       for (j = 0; j < max_labelno; j++)
 	if (local_label[j])
 	  set_label_in_map (map, j, gen_label_rtx ());
 
+#ifndef OLD_COMPILER
       for (j = FIRST_PSEUDO_REGISTER; j < max_local_regnum; j++)
+#else
+      for (j = FIRST_PSEUDO_REGISTER; j < maxregnum; j++)
+#endif
 	if (local_regno[j])
 	  {
 	    map->reg_map[j] = gen_reg_rtx (GET_MODE (regno_reg_rtx[j]));
@@ -2387,7 +2399,7 @@ iteration_info (iteration_var, initial_value, increment, loop_start, loop_end)
 
   /* Reject iteration variables larger than the host wide int size, since they
      could result in a number of iterations greater than the range of our
-     `unsigned HOST_WIDE_INT' variable loop_info->n_iterations.  */
+     `HOST_WIDE_UINT' variable loop_info->n_iterations.  */
   else if ((GET_MODE_BITSIZE (GET_MODE (iteration_var))
 	    > HOST_BITS_PER_WIDE_INT))
     {
@@ -2483,7 +2495,7 @@ find_splittable_regs (unroll_type, loop_start, loop_end, end_insert_before,
      rtx loop_start, loop_end;
      rtx end_insert_before;
      int unroll_number;
-     unsigned HOST_WIDE_INT n_iterations;
+     HOST_WIDE_UINT n_iterations;
 {
   struct iv_class *bl;
   struct induction *v;
@@ -3224,7 +3236,7 @@ rtx
 final_biv_value (bl, loop_start, loop_end, n_iterations)
      struct iv_class *bl;
      rtx loop_start, loop_end;
-     unsigned HOST_WIDE_INT n_iterations;
+     HOST_WIDE_UINT n_iterations;
 {
   rtx increment, tem;
 
@@ -3301,7 +3313,7 @@ rtx
 final_giv_value (v, loop_start, loop_end, n_iterations)
      struct induction *v;
      rtx loop_start, loop_end;
-     unsigned HOST_WIDE_INT n_iterations;
+     HOST_WIDE_UINT n_iterations;
 {
   struct iv_class *bl;
   rtx insn;
@@ -3534,7 +3546,7 @@ find_common_reg_term (op0, op1)
 /* Calculate the number of loop iterations.  Returns the exact number of loop
    iterations if it can be calculated, otherwise returns zero.  */
 
-unsigned HOST_WIDE_INT
+HOST_WIDE_UINT
 loop_iterations (loop_start, loop_end, loop_info)
      rtx loop_start, loop_end;
      struct loop_info *loop_info;
@@ -3543,7 +3555,7 @@ loop_iterations (loop_start, loop_end, loop_info)
   rtx iteration_var, initial_value, increment, final_value;
   enum rtx_code comparison_code;
   HOST_WIDE_INT abs_inc;
-  unsigned HOST_WIDE_INT abs_diff;
+  HOST_WIDE_UINT abs_diff;
   int off_by_one;
   int increment_dir;
   int unsigned_p, compare_dir, final_larger;
@@ -3845,10 +3857,10 @@ loop_iterations (loop_start, loop_end, loop_info)
   /* Final_larger is 1 if final larger, 0 if they are equal, otherwise -1.  */
   if (unsigned_p)
     final_larger
-      = ((unsigned HOST_WIDE_INT) INTVAL (final_value)
-	 > (unsigned HOST_WIDE_INT) INTVAL (initial_value))
-	- ((unsigned HOST_WIDE_INT) INTVAL (final_value)
-	   < (unsigned HOST_WIDE_INT) INTVAL (initial_value));
+      = ((HOST_WIDE_UINT) INTVAL (final_value)
+	 > (HOST_WIDE_UINT) INTVAL (initial_value))
+	- ((HOST_WIDE_UINT) INTVAL (final_value)
+	   < (HOST_WIDE_UINT) INTVAL (initial_value));
   else
     final_larger = (INTVAL (final_value) > INTVAL (initial_value))
       - (INTVAL (final_value) < INTVAL (initial_value));

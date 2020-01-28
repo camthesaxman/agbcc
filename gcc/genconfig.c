@@ -20,7 +20,7 @@ the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
 
-#include "hconfig.h"
+#include "config.h"
 #include "system.h"
 #include "rtl.h"
 #include "obstack.h"
@@ -53,15 +53,15 @@ static int max_insns_per_split = 1;
 static int clobbers_seen_this_insn;
 static int dup_operands_seen_this_insn;
 
-static void fatal PVPROTO ((const char *, ...))
+static void fatal (const char *, ...)
   ATTRIBUTE_PRINTF_1 ATTRIBUTE_NORETURN;
-void fancy_abort PROTO((void)) ATTRIBUTE_NORETURN;
+void fancy_abort (void) ATTRIBUTE_NORETURN;
 
-static void walk_insn_part PROTO((rtx, int, int));
-static void gen_insn PROTO((rtx));
-static void gen_expand PROTO((rtx));
-static void gen_split PROTO((rtx));
-static void gen_peephole PROTO((rtx));
+static void walk_insn_part (rtx, int, int);
+static void gen_insn (rtx);
+static void gen_expand (rtx);
+static void gen_split (rtx);
+static void gen_peephole (rtx);
 
 /* RECOG_P will be non-zero if this pattern was seen in a context where it will
    be used to recognize, rather than just generate an insn. 
@@ -268,11 +268,11 @@ gen_peephole (peep)
     walk_insn_part (XVECEXP (peep, 0, i), 1, 0);
 }
 
-PTR
+void *
 xmalloc (size)
   size_t size;
 {
-  register PTR val = (PTR) malloc (size);
+  register void *val = malloc (size);
 
   if (val == 0)
     fatal ("virtual memory exhausted");
@@ -280,40 +280,34 @@ xmalloc (size)
   return val;
 }
 
-PTR
+void *
 xrealloc (old, size)
-  PTR old;
+  void *old;
   size_t size;
 {
-  register PTR ptr;
+  register void *ptr;
   if (old)
-    ptr = (PTR) realloc (old, size);
+    ptr = realloc (old, size);
   else
-    ptr = (PTR) malloc (size);
+    ptr = malloc (size);
   if (!ptr)
     fatal ("virtual memory exhausted");
   return ptr;
 }
 
 static void
-fatal VPROTO ((const char *format, ...))
+fatal (const char *format, ...)
 {
-#ifndef ANSI_PROTOTYPES
-  const char *format;
-#endif
   va_list ap;
 
-  VA_START (ap, format);
+  va_start (ap, format);
 
-#ifndef ANSI_PROTOTYPES
-  format = va_arg (ap, const char *);
-#endif
 
   fprintf (stderr, "genconfig: ");
   vfprintf (stderr, format, ap);
   va_end (ap);
   fprintf (stderr, "\n");
-  exit (FATAL_EXIT_CODE);
+  exit (EXIT_FAILURE);
 }
 
 /* More 'friendly' abort that prints the line and file.
@@ -343,7 +337,7 @@ main (argc, argv)
   if (infile == 0)
     {
       perror (argv[1]);
-      exit (FATAL_EXIT_CODE);
+      exit (EXIT_FAILURE);
     }
 
   init_rtl ();
@@ -402,7 +396,7 @@ from the machine description file `md'.  */\n\n");
     printf ("#define HAVE_lo_sum\n");
 
   fflush (stdout);
-  exit (ferror (stdout) != 0 ? FATAL_EXIT_CODE : SUCCESS_EXIT_CODE);
+  exit (ferror (stdout) != 0 ? EXIT_FAILURE : EXIT_SUCCESS);
   /* NOTREACHED */
   return 0;
 }

@@ -22,7 +22,7 @@ the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
 
-#include "hconfig.h"
+#include "config.h"
 #include "system.h"
 #include "rtl.h"
 #include "obstack.h"
@@ -33,9 +33,9 @@ struct obstack *rtl_obstack = &obstack;
 #define obstack_chunk_alloc xmalloc
 #define obstack_chunk_free free
 
-static void fatal PVPROTO ((const char *, ...))
+static void fatal (const char *, ...)
   ATTRIBUTE_PRINTF_1 ATTRIBUTE_NORETURN;
-void fancy_abort PROTO((void)) ATTRIBUTE_NORETURN;
+void fancy_abort (void) ATTRIBUTE_NORETURN;
 
 /* Names for patterns.  Need to allow linking with print-rtl.  */
 char **insn_name_ptr;
@@ -46,10 +46,10 @@ static struct obstack call_obstack, normal_obstack;
 /* Max size of names encountered.  */
 static int max_id_len;
 
-static int num_operands PROTO((rtx));
-static void gen_proto PROTO((rtx));
-static void gen_nonproto PROTO((rtx));
-static void gen_insn PROTO((rtx));
+static int num_operands (rtx);
+static void gen_proto (rtx);
+static void gen_nonproto (rtx);
+static void gen_insn (rtx);
 
 
 /* Count the number of match_operand's found.  */
@@ -97,7 +97,7 @@ gen_proto (insn)
      rtx insn;
 {
   int num = num_operands (insn);
-  printf ("extern rtx gen_%-*s PROTO((", max_id_len, XSTR (insn, 0));
+  printf ("extern rtx gen_%-*s (", max_id_len, XSTR (insn, 0));
 
   if (num == 0)
     printf ("void");
@@ -109,7 +109,7 @@ gen_proto (insn)
       printf ("rtx");
     }
 
-  printf ("));\n");
+  printf (");\n");
 }
 
 /* Print out a function declaration without a prototype.  */
@@ -175,11 +175,11 @@ gen_insn (insn)
   obstack_grow (obstack_ptr, &insn, sizeof (rtx));
 }
 
-PTR
+void *
 xmalloc (size)
   size_t size;
 {
-  register PTR val = (PTR) malloc (size);
+  register void *val = malloc (size);
 
   if (val == 0)
     fatal ("virtual memory exhausted");
@@ -187,40 +187,34 @@ xmalloc (size)
   return val;
 }
 
-PTR
+void *
 xrealloc (old, size)
-  PTR old;
+  void *old;
   size_t size;
 {
-  register PTR ptr;
+  register void *ptr;
   if (old)
-    ptr = (PTR) realloc (old, size);
+    ptr = realloc (old, size);
   else
-    ptr = (PTR) malloc (size);
+    ptr = malloc (size);
   if (!ptr)
     fatal ("virtual memory exhausted");
   return ptr;
 }
 
 static void
-fatal VPROTO ((const char *format, ...))
+fatal (const char *format, ...)
 {
-#ifndef ANSI_PROTOTYPES
-  const char *format;
-#endif
   va_list ap;
 
-  VA_START (ap, format);
+  va_start (ap, format);
 
-#ifndef ANSI_PROTOTYPES
-  format = va_arg (ap, const char *);
-#endif
 
   fprintf (stderr, "genflags: ");
   vfprintf (stderr, format, ap);
   va_end (ap);
   fprintf (stderr, "\n");
-  exit (FATAL_EXIT_CODE);
+  exit (EXIT_FAILURE);
 }
 
 /* More 'friendly' abort that prints the line and file.
@@ -256,7 +250,7 @@ main (argc, argv)
   if (infile == 0)
     {
       perror (argv[1]);
-      exit (FATAL_EXIT_CODE);
+      exit (EXIT_FAILURE);
     }
 
   init_rtl ();
@@ -309,7 +303,7 @@ from the machine description file `md'.  */\n\n");
   printf ("#endif  /* NO_MD_PROTOTYPES */\n");
 
   fflush (stdout);
-  exit (ferror (stdout) != 0 ? FATAL_EXIT_CODE : SUCCESS_EXIT_CODE);
+  exit (ferror (stdout) != 0 ? EXIT_FAILURE : EXIT_SUCCESS);
   /* NOTREACHED */
   return 0;
 }

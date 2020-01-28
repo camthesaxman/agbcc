@@ -70,12 +70,12 @@ static HARD_REG_SET current_live_regs;
 
 static HARD_REG_SET pending_dead_regs;
 
-static void update_live_status		PROTO ((rtx, rtx));
-static int find_basic_block		PROTO ((rtx));
-static rtx next_insn_no_annul		PROTO ((rtx));
-static rtx find_dead_or_set_registers	PROTO ((rtx, struct resources*,
+static void update_live_status		(rtx, rtx);
+static int find_basic_block		(rtx);
+static rtx next_insn_no_annul		(rtx);
+static rtx find_dead_or_set_registers	(rtx, struct resources*,
 						rtx*, int, struct resources,
-						struct resources));
+						struct resources);
 
 /* Utility function called from mark_target_live_regs via note_stores.
    It deadens any CLOBBERed registers and livens any SET registers.  */
@@ -309,9 +309,6 @@ mark_referenced_resources (x, res, include_delayed_effects)
 	  if (frame_pointer_needed)
 	    {
 	      SET_HARD_REG_BIT (res->regs, FRAME_POINTER_REGNUM);
-#if FRAME_POINTER_REGNUM != HARD_FRAME_POINTER_REGNUM
-	      SET_HARD_REG_BIT (res->regs, HARD_FRAME_POINTER_REGNUM);
-#endif
 	    }
 
 	  for (i = 0; i < FIRST_PSEUDO_REGISTER; i++)
@@ -357,13 +354,6 @@ mark_referenced_resources (x, res, include_delayed_effects)
 
     case INSN:
     case JUMP_INSN:
-
-#ifdef INSN_REFERENCES_ARE_DELAYED
-      if (! include_delayed_effects
-	  && INSN_REFERENCES_ARE_DELAYED (x))
-	return;
-#endif
-
       /* No special processing, just speed up.  */
       mark_referenced_resources (PATTERN (x), res, include_delayed_effects);
       return;
@@ -655,13 +645,6 @@ mark_set_resources (x, res, in_dest, include_delayed_effects)
 
 	/* An insn consisting of just a CLOBBER (or USE) is just for flow
 	   and doesn't actually do anything, so we ignore it.  */
-
-#ifdef INSN_SETS_ARE_DELAYED
-      if (! include_delayed_effects
-	  && INSN_SETS_ARE_DELAYED (x))
-	return;
-#endif
-
       x = PATTERN (x);
       if (GET_CODE (x) != USE && GET_CODE (x) != CLOBBER)
 	goto restart;
@@ -937,15 +920,6 @@ mark_target_live_regs (insns, target, res)
 		if (call_used_regs[i]
 		    && i != STACK_POINTER_REGNUM && i != FRAME_POINTER_REGNUM
 		    && i != ARG_POINTER_REGNUM
-#if HARD_FRAME_POINTER_REGNUM != FRAME_POINTER_REGNUM
-		    && i != HARD_FRAME_POINTER_REGNUM
-#endif
-#if ARG_POINTER_REGNUM != FRAME_POINTER_REGNUM
-		    && ! (i == ARG_POINTER_REGNUM && fixed_regs[i])
-#endif
-#ifdef PIC_OFFSET_TABLE_REGNUM
-		    && ! (i == PIC_OFFSET_TABLE_REGNUM && flag_pic)
-#endif
 		    )
 		  CLEAR_HARD_REG_BIT (current_live_regs, i);
 
@@ -1083,9 +1057,8 @@ init_resource_info (epilogue_insn)
 
   /* Indicate what resources are required to be valid at the end of the current
      function.  The condition code never is and memory always is.  If the
-     frame pointer is needed, it is and so is the stack pointer unless
-     EXIT_IGNORE_STACK is non-zero.  If the frame pointer is not needed, the
-     stack pointer is.  Registers used to return the function value are
+     frame pointer is needed, it is. The stack pointer is needed.
+     Registers used to return the function value are
      needed.  Registers holding global variables are needed.  */
 
   end_of_function_needs.cc = 0;
@@ -1096,16 +1069,8 @@ init_resource_info (epilogue_insn)
   if (frame_pointer_needed)
     {
       SET_HARD_REG_BIT (end_of_function_needs.regs, FRAME_POINTER_REGNUM);
-#if HARD_FRAME_POINTER_REGNUM != FRAME_POINTER_REGNUM
-      SET_HARD_REG_BIT (end_of_function_needs.regs, HARD_FRAME_POINTER_REGNUM);
-#endif
-#ifdef EXIT_IGNORE_STACK
-      if (! EXIT_IGNORE_STACK
-	  || current_function_sp_is_unchanging)
-#endif
-	SET_HARD_REG_BIT (end_of_function_needs.regs, STACK_POINTER_REGNUM);
     }
-  else
+
     SET_HARD_REG_BIT (end_of_function_needs.regs, STACK_POINTER_REGNUM);
 
   if (current_function_return_rtx != 0)
@@ -1113,11 +1078,7 @@ init_resource_info (epilogue_insn)
 			       &end_of_function_needs, 1);
 
   for (i = 0; i < FIRST_PSEUDO_REGISTER; i++)
-    if (global_regs[i]
-#ifdef EPILOGUE_USES
-	|| EPILOGUE_USES (i)
-#endif
-	)
+    if (global_regs[i])
       SET_HARD_REG_BIT (end_of_function_needs.regs, i);
 
   /* The registers required to be live at the end of the function are
@@ -1146,11 +1107,11 @@ init_resource_info (epilogue_insn)
   target_hash_table
     = (struct target_info **) xmalloc ((TARGET_HASH_PRIME
 				       * sizeof (struct target_info *)));
-  bzero ((char *) target_hash_table,
+  zero_memory ((char *) target_hash_table,
 	 TARGET_HASH_PRIME * sizeof (struct target_info *));
 
   bb_ticks = (int *) xmalloc (n_basic_blocks * sizeof (int));
-  bzero ((char *) bb_ticks, n_basic_blocks * sizeof (int));
+  zero_memory ((char *) bb_ticks, n_basic_blocks * sizeof (int));
 }
 
 /* Free up the resources allcated to mark_target_live_regs ().  This

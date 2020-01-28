@@ -46,7 +46,7 @@ Boston, MA 02111-1307, USA.  */
 #define obstack_chunk_alloc xmalloc
 #define obstack_chunk_free free
 /* obstack.[ch] explicitly declined to prototype this. */
-extern int _obstack_allocated_p PROTO ((struct obstack *h, GENERIC_PTR obj));
+extern int _obstack_allocated_p (struct obstack *h, void * obj);
 
 /* Tree nodes of permanent duration are allocated in this obstack.
    They are the identifier nodes, and everything outside of
@@ -258,14 +258,13 @@ static int next_type_uid = 1;
 
 /* The language-specific function for alias analysis.  If NULL, the
    language does not do any special alias analysis.  */
-int (*lang_get_alias_set) PROTO((tree));
+int (*lang_get_alias_set) (tree);
 
 /* Here is how primitive or already-canonicalized types' hash
    codes are made.  */
 #define TYPE_HASH(TYPE) ((unsigned long) (TYPE) & 0777777)
 
-static void set_type_quals PROTO((tree, int));
-static void append_random_chars PROTO((char *));
+static void set_type_quals (tree, int);
 
 extern char *mode_name[];
 
@@ -297,7 +296,7 @@ init_obstacks ()
   rtl_obstack = saveable_obstack = &permanent_obstack;
 
   /* Init the hash table of identifiers.  */
-  bzero ((char *) hash_table, sizeof hash_table);
+  zero_memory ((char *) hash_table, sizeof hash_table);
 }
 
 void
@@ -713,7 +712,7 @@ perm_calloc (nelem, size)
      long size;
 {
   char *rval = (char *) obstack_alloc (&permanent_obstack, nelem * size);
-  bzero (rval, nelem * size);
+  zero_memory (rval, nelem * size);
   return rval;
 }
 
@@ -1070,7 +1069,7 @@ make_node (code)
     }
 
   t = (tree) obstack_alloc (obstack, length);
-  bzero (t, length);
+  zero_memory (t, length);
 
 #ifdef GATHER_STATISTICS
   tree_node_counts[(int)kind]++;
@@ -1268,7 +1267,7 @@ get_identifier (text)
   for (idp = hash_table[hi]; idp; idp = TREE_CHAIN (idp))
     if (IDENTIFIER_LENGTH (idp) == len
 	&& IDENTIFIER_POINTER (idp)[0] == text[0]
-	&& !bcmp (IDENTIFIER_POINTER (idp), text, len))
+	&& !memcmp (IDENTIFIER_POINTER (idp), text, len))
       return idp;		/* <-- return if found */
 
   /* Not found; optionally warn about a similar identifier */
@@ -1331,7 +1330,7 @@ maybe_get_identifier (text)
   for (idp = hash_table[hi]; idp; idp = TREE_CHAIN (idp))
     if (IDENTIFIER_LENGTH (idp) == len
 	&& IDENTIFIER_POINTER (idp)[0] == text[0]
-	&& !bcmp (IDENTIFIER_POINTER (idp), text, len))
+	&& !memcmp (IDENTIFIER_POINTER (idp), text, len))
       return idp;		/* <-- return if found */
 
   return NULL_TREE;
@@ -1428,7 +1427,7 @@ real_value_from_int_cst (type, i)
       e = ((double) ((HOST_WIDE_INT) 1 << (HOST_BITS_PER_WIDE_INT / 2))
 	    * (double) ((HOST_WIDE_INT) 1 << (HOST_BITS_PER_WIDE_INT / 2)));
       d *= e;
-      e = (double) (unsigned HOST_WIDE_INT) (~ TREE_INT_CST_LOW (i));
+      e = (double) (HOST_WIDE_UINT) (~ TREE_INT_CST_LOW (i));
       d += e;
       d = (- d - 1.0);
     }
@@ -1436,11 +1435,11 @@ real_value_from_int_cst (type, i)
     {
       REAL_VALUE_TYPE e;
 
-      d = (double) (unsigned HOST_WIDE_INT) TREE_INT_CST_HIGH (i);
+      d = (double) (HOST_WIDE_UINT) TREE_INT_CST_HIGH (i);
       e = ((double) ((HOST_WIDE_INT) 1 << (HOST_BITS_PER_WIDE_INT / 2))
 	    * (double) ((HOST_WIDE_INT) 1 << (HOST_BITS_PER_WIDE_INT / 2)));
       d *= e;
-      e = (double) (unsigned HOST_WIDE_INT) TREE_INT_CST_LOW (i);
+      e = (double) (HOST_WIDE_UINT) TREE_INT_CST_LOW (i);
       d += e;
     }
 #endif /* not REAL_ARITHMETIC */
@@ -1482,7 +1481,7 @@ build_real_from_int_cst (type, i)
   /* Check for valid float value for this type on this target machine.  */
 
  got_it:
-  set_float_handler (NULL_PTR);
+  set_float_handler (NULL);
 
 #ifdef CHECK_FLOAT_VALUE
   CHECK_FLOAT_VALUE (TYPE_MODE (type), d, overflow);
@@ -1551,7 +1550,7 @@ make_tree_vec (len)
 #endif
 
   t = (tree) obstack_alloc (obstack, length);
-  bzero (t, length);
+  zero_memory (t, length);
 
   TREE_SET_CODE (t, TREE_VEC);
   TREE_VEC_LENGTH (t) = len;
@@ -2965,23 +2964,15 @@ stabilize_reference_1 (e)
    Constants, decls, types and misc nodes cannot be.  */
 
 tree
-build VPROTO((enum tree_code code, tree tt, ...))
+build (enum tree_code code, tree tt, ...)
 {
-#ifndef ANSI_PROTOTYPES
-  enum tree_code code;
-  tree tt;
-#endif
   va_list p;
   register tree t;
   register int length;
   register int i;
 
-  VA_START (p, tt);
+  va_start (p, tt);
 
-#ifndef ANSI_PROTOTYPES
-  code = va_arg (p, enum tree_code);
-  tt = va_arg (p, tree);
-#endif
 
   t = make_node (code);
   length = tree_code_length[(int) code];
@@ -3058,7 +3049,7 @@ build1 (code, type, node)
   length = sizeof (struct tree_exp);
 
   t = (tree) obstack_alloc (obstack, length);
-  bzero (t, length);
+  zero_memory (t, length);
 
 #ifdef GATHER_STATISTICS
   tree_node_counts[(int)kind]++;
@@ -3089,21 +3080,15 @@ build1 (code, type, node)
    or even garbage if their values do not matter.  */
 
 tree
-build_nt VPROTO((enum tree_code code, ...))
+build_nt (enum tree_code code, ...)
 {
-#ifndef ANSI_PROTOTYPES
-  enum tree_code code;
-#endif
   va_list p;
   register tree t;
   register int length;
   register int i;
 
-  VA_START (p, code);
+  va_start (p, code);
 
-#ifndef ANSI_PROTOTYPES
-  code = va_arg (p, enum tree_code);
-#endif
 
   t = make_node (code);
   length = tree_code_length[(int) code];
@@ -3119,22 +3104,16 @@ build_nt VPROTO((enum tree_code code, ...))
    on the temp_decl_obstack, regardless.  */
 
 tree
-build_parse_node VPROTO((enum tree_code code, ...))
+build_parse_node (enum tree_code code, ...)
 {
-#ifndef ANSI_PROTOTYPES
-  enum tree_code code;
-#endif
   register struct obstack *ambient_obstack = expression_obstack;
   va_list p;
   register tree t;
   register int length;
   register int i;
 
-  VA_START (p, code);
+  va_start (p, code);
 
-#ifndef ANSI_PROTOTYPES
-  code = va_arg (p, enum tree_code);
-#endif
 
   expression_obstack = &temp_decl_obstack;
 
@@ -3968,7 +3947,7 @@ simple_cst_equal (t1, t2)
 
     case STRING_CST:
       return TREE_STRING_LENGTH (t1) == TREE_STRING_LENGTH (t2)
-	&& !bcmp (TREE_STRING_POINTER (t1), TREE_STRING_POINTER (t2),
+	&& !memcmp (TREE_STRING_POINTER (t1), TREE_STRING_POINTER (t2),
 		  TREE_STRING_LENGTH (t1));
 
     case CONSTRUCTOR:
@@ -4167,7 +4146,7 @@ build_range_type (type, lowval, highval)
       if (highval && TREE_CODE (highval) == INTEGER_CST)
 	highint = TREE_INT_CST_LOW (highval);
       else
-	highint = (~(unsigned HOST_WIDE_INT)0) >> 1;
+	highint = (~(HOST_WIDE_UINT)0) >> 1;
 
       maxint = (int) (highint - lowint);
       return type_hash_canon (maxint < 0 ? ~maxint : maxint, itype);
@@ -4749,8 +4728,7 @@ print_obstack_statistics (str, o)
 	   str, n_alloc, n_chunks);
 }
 
-/* Print debugging information about tree nodes generated during the compile,
-   and any language-specific information.  */
+/* Print debugging information about tree nodes generated during the compile. */
 
 void
 dump_tree_statistics ()
@@ -4785,150 +4763,8 @@ dump_tree_statistics ()
   print_obstack_statistics ("momentary_obstack", &momentary_obstack);
   print_obstack_statistics ("temp_decl_obstack", &temp_decl_obstack);
   print_inline_obstack_statistics ();
-  print_lang_statistics ();
-}
-
-#define FILE_FUNCTION_PREFIX_LEN 9
-
-#ifndef NO_DOLLAR_IN_LABEL
-#define FILE_FUNCTION_FORMAT "_GLOBAL_$%s$%s"
-#else /* NO_DOLLAR_IN_LABEL */
-#ifndef NO_DOT_IN_LABEL
-#define FILE_FUNCTION_FORMAT "_GLOBAL_.%s.%s"
-#else /* NO_DOT_IN_LABEL */
-#define FILE_FUNCTION_FORMAT "_GLOBAL__%s_%s"
-#endif	/* NO_DOT_IN_LABEL */
-#endif	/* NO_DOLLAR_IN_LABEL */
-
-extern char * first_global_object_name;
-extern char * weak_global_object_name;
-
-/* Appends 6 random characters to TEMPLATE to (hopefully) avoid name
-   clashes in cases where we can't reliably choose a unique name.
-
-   Derived from mkstemp.c in libiberty.  */
-
-static void
-append_random_chars (template)
-     char *template;
-{
-  static const char letters[]
-    = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  static unsigned HOST_WIDE_INT value;
-  unsigned HOST_WIDE_INT v;
-
-#ifdef HAVE_GETTIMEOFDAY
-  struct timeval tv;
-#endif
-
-  template += strlen (template);
-
-#ifdef HAVE_GETTIMEOFDAY
-  /* Get some more or less random data.  */
-  gettimeofday (&tv, NULL);
-  value += ((unsigned HOST_WIDE_INT) tv.tv_usec << 16) ^ tv.tv_sec ^ getpid ();
-#else
-  value += getpid ();
-#endif
-
-  v = value;
-
-  /* Fill in the random bits.  */
-  template[0] = letters[v % 62];
-  v /= 62;
-  template[1] = letters[v % 62];
-  v /= 62;
-  template[2] = letters[v % 62];
-  v /= 62;
-  template[3] = letters[v % 62];
-  v /= 62;
-  template[4] = letters[v % 62];
-  v /= 62;
-  template[5] = letters[v % 62];
-
-  template[6] = '\0';
 }
 
-/* Generate a name for a function unique to this translation unit.
-   TYPE is some string to identify the purpose of this function to the
-   linker or collect2.  */
-
-tree
-get_file_function_name_long (type)
-     char *type;
-{
-  char *buf;
-  register char *p;
-
-  if (first_global_object_name)
-    p = first_global_object_name;
-  else
-    {
-      /* We don't have anything that we know to be unique to this translation
-	 unit, so use what we do have and throw in some randomness.  */
-
-      char *name = weak_global_object_name;
-      char *file = main_input_filename;
-
-      if (! name)
-	name = "";
-      if (! file)
-	file = input_filename;
-
-      p = (char *) alloca (7 + strlen (name) + strlen (file));
-
-      sprintf (p, "%s%s", name, file);
-      append_random_chars (p);
-    }
-
-  buf = (char *) alloca (sizeof (FILE_FUNCTION_FORMAT) + strlen (p)
-			 + strlen (type));
-
-  /* Set up the name of the file-level functions we may need.  */
-  /* Use a global object (which is already required to be unique over
-     the program) rather than the file name (which imposes extra
-     constraints).  -- Raeburn@MIT.EDU, 10 Jan 1990.  */
-  sprintf (buf, FILE_FUNCTION_FORMAT, type, p);
-
-  /* Don't need to pull weird characters out of global names.  */
-  if (p != first_global_object_name)
-    {
-      for (p = buf+11; *p; p++)
-	if (! ((*p >= '0' && *p <= '9')
-#if 0 /* we always want labels, which are valid C++ identifiers (+ `$') */
-#ifndef ASM_IDENTIFY_GCC	/* this is required if `.' is invalid -- k. raeburn */
-	       || *p == '.'
-#endif
-#endif
-#ifndef NO_DOLLAR_IN_LABEL	/* this for `$'; unlikely, but... -- kr */
-	       || *p == '$'
-#endif
-#ifndef NO_DOT_IN_LABEL		/* this for `.'; unlikely, but...  */
-	       || *p == '.'
-#endif
-	       || (*p >= 'A' && *p <= 'Z')
-	       || (*p >= 'a' && *p <= 'z')))
-	  *p = '_';
-    }
-
-  return get_identifier (buf);
-}
-
-/* If KIND=='I', return a suitable global initializer (constructor) name.
-   If KIND=='D', return a suitable global clean-up (destructor) name.  */
-
-tree
-get_file_function_name (kind)
-     int kind;
-{
-  char p[2];
-  p[0] = kind;
-  p[1] = 0;
-
-  return get_file_function_name_long (p);
-}
-
-
 /* Expand (the constant part of) a SET_TYPE CONSTRUCTOR node.
    The result is placed in BUFFER (which has length BIT_SIZE),
    with one bit in each char ('\000' or '\001').
@@ -5013,9 +4849,6 @@ get_set_constructor_bytes (init, buffer, wd_size)
     {
       if (bit_buffer[i])
 	{
-	  if (BYTES_BIG_ENDIAN)
-	    *bytep |= (1 << (set_word_size - 1 - bit_pos));
-	  else
 	    *bytep |= 1 << bit_pos;
 	}
       bit_pos++;

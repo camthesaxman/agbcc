@@ -41,7 +41,7 @@ typedef struct bitmap_element_def
   struct bitmap_element_def *next;		/* Next element. */
   struct bitmap_element_def *prev;		/* Previous element. */
   unsigned int indx;			/* regno/BITMAP_ELEMENT_ALL_BITS. */
-  unsigned HOST_WIDE_INT bits[BITMAP_ELEMENT_WORDS]; /* Bits that are set. */
+  HOST_WIDE_UINT bits[BITMAP_ELEMENT_WORDS]; /* Bits that are set. */
 } bitmap_element;
 
 /* Head of bitmap linked list.  */
@@ -63,41 +63,41 @@ extern bitmap_element *bitmap_free;	/* Freelist of bitmap elements */
 extern bitmap_element bitmap_zero;	/* Zero bitmap element */
 
 /* Clear a bitmap by freeing up the linked list.  */
-extern void bitmap_clear PROTO((bitmap));
+extern void bitmap_clear (bitmap);
 
 /* Copy a bitmap to another bitmap. */
-extern void bitmap_copy PROTO((bitmap, bitmap));
+extern void bitmap_copy (bitmap, bitmap);
 
 /* Perform an operation on two bitmaps, yielding a third.  */
-extern void bitmap_operation PROTO((bitmap, bitmap, bitmap, enum bitmap_bits));
+extern void bitmap_operation (bitmap, bitmap, bitmap, enum bitmap_bits);
 
 /* `or' into one bitmap the `and' of a second bitmap witih the complement
    of a third.  */
-extern void bitmap_ior_and_compl PROTO((bitmap, bitmap, bitmap));
+extern void bitmap_ior_and_compl (bitmap, bitmap, bitmap);
 
 /* Clear a single register in a register set.  */
-extern void bitmap_clear_bit PROTO((bitmap, int));
+extern void bitmap_clear_bit (bitmap, int);
 
 /* Set a single register in a register set.  */
-extern void bitmap_set_bit PROTO((bitmap, int));
+extern void bitmap_set_bit (bitmap, int);
 
 /* Return true if a register is set in a register set.  */
-extern int bitmap_bit_p PROTO((bitmap, int));
+extern int bitmap_bit_p (bitmap, int);
 
 /* Debug functions to print a bitmap linked list.  */
-extern void bitmap_debug PROTO((bitmap));
-extern void bitmap_debug_file PROTO((FILE *, bitmap));
+extern void bitmap_debug (bitmap);
+extern void bitmap_debug_file (FILE *, bitmap);
 
 /* Print a bitmap */
-extern void bitmap_print PROTO((FILE *, bitmap, char *, char *));
+extern void bitmap_print (FILE *, bitmap, char *, char *);
 
 /* Initialize a bitmap header.  */
-extern bitmap bitmap_initialize PROTO((bitmap));
+extern bitmap bitmap_initialize (bitmap);
 
 /* Release all memory held by bitmaps.  */
-extern void bitmap_release_memory PROTO((void));
+extern void bitmap_release_memory (void);
 
-extern void debug_bitmap PROTO((bitmap));
+extern void debug_bitmap (bitmap);
 
 /* Allocate a bitmap with oballoc.  */
 #define BITMAP_OBSTACK_ALLOC(OBSTACK)				\
@@ -146,14 +146,14 @@ do {									\
     {									\
       for (; word_num_ < BITMAP_ELEMENT_WORDS; word_num_++)		\
 	{								\
-	  unsigned HOST_WIDE_INT word_ = ptr_->bits[word_num_];		\
+	  HOST_WIDE_UINT word_ = ptr_->bits[word_num_];		\
 									\
 	  if (word_ != 0)						\
 	    {								\
 	      for (; bit_num_ < HOST_BITS_PER_WIDE_INT; bit_num_++)	\
 		{							\
-		  unsigned HOST_WIDE_INT mask_				\
-		    = ((unsigned HOST_WIDE_INT) 1) << bit_num_;		\
+		  HOST_WIDE_UINT mask_				\
+		    = ((HOST_WIDE_UINT) 1) << bit_num_;		\
 									\
 		  if ((word_ & mask_) != 0)				\
 		    {							\
@@ -213,14 +213,14 @@ do {									\
 									\
       for (; word_num_ < BITMAP_ELEMENT_WORDS; word_num_++)		\
 	{								\
-	  unsigned HOST_WIDE_INT word_ = (ptr1_->bits[word_num_]	\
+	  HOST_WIDE_UINT word_ = (ptr1_->bits[word_num_]	\
 					  & ~ tmp2_->bits[word_num_]);	\
 	  if (word_ != 0)						\
 	    {								\
 	      for (; bit_num_ < HOST_BITS_PER_WIDE_INT; bit_num_++)	\
 		{							\
-		  unsigned HOST_WIDE_INT mask_				\
-		    = ((unsigned HOST_WIDE_INT)1) << bit_num_;		\
+		  HOST_WIDE_UINT mask_				\
+		    = ((HOST_WIDE_UINT)1) << bit_num_;		\
 									\
 		  if ((word_ & mask_) != 0)				\
 		    {							\
@@ -286,14 +286,14 @@ do {									\
 									\
       for (; word_num_ < BITMAP_ELEMENT_WORDS; word_num_++)		\
 	{								\
-	  unsigned HOST_WIDE_INT word_ = (ptr1_->bits[word_num_]	\
+	  HOST_WIDE_UINT word_ = (ptr1_->bits[word_num_]	\
 					  & ptr2_->bits[word_num_]);	\
 	  if (word_ != 0)						\
 	    {								\
 	      for (; bit_num_ < HOST_BITS_PER_WIDE_INT; bit_num_++)	\
 		{							\
-		  unsigned HOST_WIDE_INT mask_				\
-		    = ((unsigned HOST_WIDE_INT)1) << bit_num_;		\
+		  HOST_WIDE_UINT mask_				\
+		    = ((HOST_WIDE_UINT)1) << bit_num_;		\
 									\
 		  if ((word_ & mask_) != 0)				\
 		    {							\

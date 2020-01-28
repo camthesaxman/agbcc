@@ -70,7 +70,7 @@ Boston, MA 02111-1307, USA.  */
    change a conditional jump around code into conditional {true,false}
    execution.  */
 #ifdef HAVE_conditional_execution
-static rtx conditional_execution	PROTO((rtx));
+static rtx conditional_execution	(rtx);
 
 #ifndef MAX_CONDITIONAL_EXECUTE
 #ifdef HAVE_cc0
@@ -127,29 +127,29 @@ int can_reach_end;
 
 static int cross_jump_death_matters = 0;
 
-static int init_label_info		PROTO((rtx));
-static void delete_barrier_successors	PROTO((rtx));
-static void mark_all_labels		PROTO((rtx, int));
-static rtx delete_unreferenced_labels	PROTO((rtx));
-static void delete_noop_moves		PROTO((rtx));
-static int calculate_can_reach_end	PROTO((rtx, int, int));
-static int duplicate_loop_exit_test	PROTO((rtx));
-static void find_cross_jump		PROTO((rtx, rtx, int, rtx *, rtx *));
-static void do_cross_jump		PROTO((rtx, rtx, rtx));
-static int jump_back_p			PROTO((rtx, rtx));
-static int tension_vector_labels	PROTO((rtx, int));
-static void mark_jump_label		PROTO((rtx, rtx, int));
-static void delete_computation		PROTO((rtx));
-static void delete_from_jump_chain	PROTO((rtx));
-static int delete_labelref_insn		PROTO((rtx, rtx, int));
-static void mark_modified_reg		PROTO((rtx, rtx));
-static void redirect_tablejump		PROTO((rtx, rtx));
+static int init_label_info		(rtx);
+static void delete_barrier_successors	(rtx);
+static void mark_all_labels		(rtx, int);
+static rtx delete_unreferenced_labels	(rtx);
+static void delete_noop_moves		(rtx);
+static int calculate_can_reach_end	(rtx, int, int);
+static int duplicate_loop_exit_test	(rtx);
+static void find_cross_jump		(rtx, rtx, int, rtx *, rtx *);
+static void do_cross_jump		(rtx, rtx, rtx);
+static int jump_back_p			(rtx, rtx);
+static int tension_vector_labels	(rtx, int);
+static void mark_jump_label		(rtx, rtx, int);
+static void delete_computation		(rtx);
+static void delete_from_jump_chain	(rtx);
+static int delete_labelref_insn		(rtx, rtx, int);
+static void mark_modified_reg		(rtx, rtx);
+static void redirect_tablejump		(rtx, rtx);
 /* CYGNUS LOCAL -- branch prediction */
-static rtx branch_predict_move		PROTO((rtx, rtx, rtx, rtx));
-static void branch_predict_reorg	PROTO((rtx));
+static rtx branch_predict_move		(rtx, rtx, rtx, rtx);
+static void branch_predict_reorg	(rtx);
 /* END CYGNUS LOCAL */
 #ifndef HAVE_cc0
-static rtx find_insert_position         PROTO((rtx, rtx));
+static rtx find_insert_position         (rtx, rtx);
 #endif
 
 /* Delete no-op jumps and optimize jumps to jumps
@@ -208,7 +208,7 @@ jump_optimize (f, cross_jump, noop_moves, after_regscan)
      we make.  */
   max_jump_chain = max_uid * 14 / 10;
   jump_chain = (rtx *) alloca (max_jump_chain * sizeof (rtx));
-  bzero ((char *) jump_chain, max_jump_chain * sizeof (rtx));
+  zero_memory ((char *) jump_chain, max_jump_chain * sizeof (rtx));
 
   mark_all_labels (f, cross_jump);
 
@@ -243,24 +243,6 @@ jump_optimize (f, cross_jump, noop_moves, after_regscan)
       return;
     }
 
-#ifdef HAVE_return
-  if (HAVE_return)
-    {
-      /* If we fall through to the epilogue, see if we can insert a RETURN insn
-	 in front of it.  If the machine allows it at this point (we might be
-	 after reload for a leaf routine), it will improve optimization for it
-	 to be there.  */
-      insn = get_last_insn ();
-      while (insn && GET_CODE (insn) == NOTE)
-	insn = PREV_INSN (insn);
-
-      if (insn && GET_CODE (insn) != BARRIER)
-	{
-	  emit_jump_insn (gen_return ());
-	  emit_barrier ();
-	}
-    }
-#endif
 
   if (noop_moves)
     delete_noop_moves (f);
@@ -1827,7 +1809,6 @@ jump_optimize (f, cross_jump, noop_moves, after_regscan)
 		   Also don't do it when we are called after reload since
 		   it will confuse reorg.  */
 		if (! first
-		    && (reload_completed ? ! flag_delayed_branch : 1)
 		    /* Make sure INSN is something we can invert.  */
 		    && condjump_p (insn)
 		    && label1 != 0
@@ -2072,25 +2053,6 @@ jump_optimize (f, cross_jump, noop_moves, after_regscan)
 	}
   }
 
-#ifdef HAVE_return
-  if (HAVE_return)
-    {
-      /* If we fall through to the epilogue, see if we can insert a RETURN insn
-	 in front of it.  If the machine allows it at this point (we might be
-	 after reload for a leaf routine), it will improve optimization for it
-	 to be there.  We do this both here and at the start of this pass since
-	 the RETURN might have been deleted by some of our optimizations.  */
-      insn = get_last_insn ();
-      while (insn && GET_CODE (insn) == NOTE)
-	insn = PREV_INSN (insn);
-
-      if (insn && GET_CODE (insn) != BARRIER)
-	{
-	  emit_jump_insn (gen_return ());
-	  emit_barrier ();
-	}
-    }
-#endif
 
   can_reach_end = calculate_can_reach_end (last_insn, 0, 1);
 
@@ -2250,102 +2212,6 @@ delete_noop_moves (f)
 	  register rtx body = PATTERN (insn);
 
 /* Combine stack_adjusts with following push_insns.  */
-#ifdef PUSH_ROUNDING
-	  if (GET_CODE (body) == SET
-	      && SET_DEST (body) == stack_pointer_rtx
-	      && GET_CODE (SET_SRC (body)) == PLUS
-	      && XEXP (SET_SRC (body), 0) == stack_pointer_rtx
-	      && GET_CODE (XEXP (SET_SRC (body), 1)) == CONST_INT
-	      && INTVAL (XEXP (SET_SRC (body), 1)) > 0)
-	    {
-	      rtx p;
-	      rtx stack_adjust_insn = insn;
-	      int stack_adjust_amount = INTVAL (XEXP (SET_SRC (body), 1));
-	      int total_pushed = 0;
-	      int pushes = 0;
-
-	      /* Find all successive push insns.  */
-	      p = insn;
-	      /* Don't convert more than three pushes;
-		 that starts adding too many displaced addresses
-		 and the whole thing starts becoming a losing
-		 proposition.  */
-	      while (pushes < 3)
-		{
-		  rtx pbody, dest;
-		  p = next_nonnote_insn (p);
-		  if (p == 0 || GET_CODE (p) != INSN)
-		    break;
-		  pbody = PATTERN (p);
-		  if (GET_CODE (pbody) != SET)
-		    break;
-		  dest = SET_DEST (pbody);
-		  /* Allow a no-op move between the adjust and the push.  */
-		  if (GET_CODE (dest) == REG
-		      && GET_CODE (SET_SRC (pbody)) == REG
-		      && REGNO (dest) == REGNO (SET_SRC (pbody)))
-		    continue;
-		  if (! (GET_CODE (dest) == MEM
-			 && GET_CODE (XEXP (dest, 0)) == POST_INC
-			 && XEXP (XEXP (dest, 0), 0) == stack_pointer_rtx))
-		    break;
-		  pushes++;
-		  if (total_pushed + GET_MODE_SIZE (GET_MODE (SET_DEST (pbody)))
-		      > stack_adjust_amount)
-		    break;
-		  total_pushed += GET_MODE_SIZE (GET_MODE (SET_DEST (pbody)));
-		}
-
-	      /* Discard the amount pushed from the stack adjust;
-		 maybe eliminate it entirely.  */
-	      if (total_pushed >= stack_adjust_amount)
-		{
-		  delete_computation (stack_adjust_insn);
-		  total_pushed = stack_adjust_amount;
-		}
-	      else
-		XEXP (SET_SRC (PATTERN (stack_adjust_insn)), 1)
-		  = GEN_INT (stack_adjust_amount - total_pushed);
-
-	      /* Change the appropriate push insns to ordinary stores.  */
-	      p = insn;
-	      while (total_pushed > 0)
-		{
-		  rtx pbody, dest;
-		  p = next_nonnote_insn (p);
-		  if (GET_CODE (p) != INSN)
-		    break;
-		  pbody = PATTERN (p);
-		  if (GET_CODE (pbody) != SET)
-		    break;
-		  dest = SET_DEST (pbody);
-		  /* Allow a no-op move between the adjust and the push.  */
-		  if (GET_CODE (dest) == REG
-		      && GET_CODE (SET_SRC (pbody)) == REG
-		      && REGNO (dest) == REGNO (SET_SRC (pbody)))
-		    continue;
-		  if (! (GET_CODE (dest) == MEM
-			 && GET_CODE (XEXP (dest, 0)) == POST_INC
-			 && XEXP (XEXP (dest, 0), 0) == stack_pointer_rtx))
-		    break;
-		  total_pushed -= GET_MODE_SIZE (GET_MODE (SET_DEST (pbody)));
-		  /* If this push doesn't fully fit in the space
-		     of the stack adjust that we deleted,
-		     make another stack adjust here for what we
-		     didn't use up.  There should be peepholes
-		     to recognize the resulting sequence of insns.  */
-		  if (total_pushed < 0)
-		    {
-		      emit_insn_before (gen_add2_insn (stack_pointer_rtx,
-						       GEN_INT (- total_pushed)),
-					p);
-		      break;
-		    }
-		  XEXP (dest, 0)
-		    = plus_constant (stack_pointer_rtx, total_pushed);
-		}
-	    }
-#endif
 
 	  /* Detect and delete no-op move instructions
 	     resulting from not allocating a parameter in a register.  */
@@ -2375,7 +2241,7 @@ delete_noop_moves (f)
 		{
 		  rtx trial;
 		  rtx tem = find_equiv_reg (NULL_RTX, insn, 0,
-					    sreg, NULL_PTR, dreg,
+					    sreg, NULL, dreg,
 					    GET_MODE (SET_SRC (body)));
 
 		  if (tem != 0
@@ -2413,7 +2279,7 @@ delete_noop_moves (f)
 		}
 	      else if (dreg >= 0 && CONSTANT_P (SET_SRC (body))
 		       && find_equiv_reg (SET_SRC (body), insn, 0, dreg,
-					  NULL_PTR, 0,
+					  NULL, 0,
 					  GET_MODE (SET_DEST (body))))
 		{
 		  /* This handles the case where we have two consecutive
@@ -2468,9 +2334,7 @@ delete_noop_moves (f)
 		delete_insn (insn);
 	    }
 	  /* Also delete insns to store bit fields if they are no-ops.  */
-	  /* Not worth the hair to detect this in the big-endian case.  */
-	  else if (! BYTES_BIG_ENDIAN
-		   && GET_CODE (body) == SET
+	  else if (GET_CODE (body) == SET
 		   && GET_CODE (SET_DEST (body)) == ZERO_EXTRACT
 		   && XEXP (SET_DEST (body), 2) == const0_rtx
 		   && XEXP (SET_DEST (body), 0) == SET_SRC (body)
@@ -2666,7 +2530,7 @@ duplicate_loop_exit_test (loop_start)
 	    if (reg_map == 0)
 	      {
 		reg_map = (rtx *) alloca (max_reg * sizeof (rtx));
-		bzero ((char *) reg_map, max_reg * sizeof (rtx));
+		zero_memory ((char *) reg_map, max_reg * sizeof (rtx));
 	      }
 
 	    REG_LOOP_TEST_P (reg) = 1;
@@ -2888,41 +2752,6 @@ find_cross_jump (e1, e2, minimum, f1, f2)
 			    CALL_INSN_FUNCTION_USAGE (i2)))
 	lose = 1;
 
-#ifdef STACK_REGS
-      /* If cross_jump_death_matters is not 0, the insn's mode
-	 indicates whether or not the insn contains any stack-like
-	 regs.  */
-
-      if (!lose && cross_jump_death_matters && GET_MODE (i1) == QImode)
-	{
-	  /* If register stack conversion has already been done, then
-	     death notes must also be compared before it is certain that
-	     the two instruction streams match.  */
-
-	  rtx note;
-	  HARD_REG_SET i1_regset, i2_regset;
-
-	  CLEAR_HARD_REG_SET (i1_regset);
-	  CLEAR_HARD_REG_SET (i2_regset);
-
-	  for (note = REG_NOTES (i1); note; note = XEXP (note, 1))
-	    if (REG_NOTE_KIND (note) == REG_DEAD
-		&& STACK_REG_P (XEXP (note, 0)))
-	      SET_HARD_REG_BIT (i1_regset, REGNO (XEXP (note, 0)));
-
-	  for (note = REG_NOTES (i2); note; note = XEXP (note, 1))
-	    if (REG_NOTE_KIND (note) == REG_DEAD
-		&& STACK_REG_P (XEXP (note, 0)))
-	      SET_HARD_REG_BIT (i2_regset, REGNO (XEXP (note, 0)));
-
-	  GO_IF_HARD_REG_EQUAL (i1_regset, i2_regset, done);
-
-	  lose = 1;
-
-	done:
-	  ;
-	}
-#endif
 
       /* Don't allow old-style asm or volatile extended asms to be accepted
 	 for cross jumping purposes.  It is conceptually correct to allow
@@ -4726,10 +4555,10 @@ thread_jumps (f, max_reg, flag_before_loop)
 	      || JUMP_LABEL (b1) == 0)
 	    continue;
 
-	  bzero (modified_regs, max_reg * sizeof (char));
+	  zero_memory (modified_regs, max_reg * sizeof (char));
 	  modified_mem = 0;
 
-	  bcopy ((char *) all_reset, (char *) same_regs,
+	  copy_memory ((char *) all_reset, (char *) same_regs,
 		 max_reg * sizeof (int));
 	  num_same_regs = 0;
 
@@ -4768,7 +4597,6 @@ thread_jumps (f, max_reg, flag_before_loop)
 		    if (call_used_regs[i] && ! fixed_regs[i]
 			&& i != STACK_POINTER_REGNUM
 			&& i != FRAME_POINTER_REGNUM
-			&& i != HARD_FRAME_POINTER_REGNUM
 			&& i != ARG_POINTER_REGNUM)
 		      modified_regs[i] = 1;
 		}
@@ -5116,8 +4944,8 @@ condjump_expect_p (insn)
   int retval;
   HOST_WIDE_INT exp_value;
   HOST_WIDE_INT cmp_value;
-  unsigned HOST_WIDE_INT exp_uns;
-  unsigned HOST_WIDE_INT cmp_uns;
+  HOST_WIDE_UINT exp_uns;
+  HOST_WIDE_UINT cmp_uns;
 
   if (GET_CODE (insn) != JUMP_INSN)
     return 0;
@@ -5240,7 +5068,7 @@ conditional_execution (insn)
   rtx seq;
 
   fix_insns = (cexec *) alloca (sizeof (cexec) * max);
-  bzero ((char *)fix_insns, sizeof (cexec) * max);
+  zero_memory ((char *)fix_insns, sizeof (cexec) * max);
 
   true_false = (XEXP (SET_SRC (PATTERN (insn)), 1) != pc_rtx);
   for (p = next_nonnote_insn (insn); ; p = next_nonnote_insn (p))
@@ -5398,7 +5226,6 @@ branch_predict_move (insn, cur_line, barrier, barrier_end)
   int barrier_p = (GET_CODE (prev_label) == BARRIER);
   rtx new_label;
   rtx tmp;
-  rtx tmp_next;
   enum rtx_code if_code;
 
   /* Search for the label in the following insns.  */

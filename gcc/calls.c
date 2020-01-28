@@ -39,13 +39,6 @@ Boston, MA 02111-1307, USA.  */
    They should if the stack and args grow in opposite directions, but
    only if we have push insns.  */
 
-#ifdef PUSH_ROUNDING
-
-#if defined (STACK_GROWS_DOWNWARD) != defined (ARGS_GROW_DOWNWARD)
-#define PUSH_ARGS_REVERSED	/* If it's last to first */
-#endif
-
-#endif
 
 /* Like PREFERRED_STACK_BOUNDARY but in units of bytes, not bits.  */
 #define STACK_BYTES (PREFERRED_STACK_BOUNDARY / BITS_PER_UNIT)
@@ -124,23 +117,23 @@ static int highest_outgoing_arg_in_use;
 int stack_arg_under_construction;
 #endif
 
-static int calls_function	PROTO ((tree, int));
-static int calls_function_1	PROTO ((tree, int));
-static void emit_call_1		PROTO ((rtx, tree, tree, HOST_WIDE_INT,
+static int calls_function	(tree, int);
+static int calls_function_1	(tree, int);
+static void emit_call_1		(rtx, tree, tree, HOST_WIDE_INT,
 				        HOST_WIDE_INT, rtx, rtx,
-				        int, rtx, int));
-static void special_function_p	PROTO ((char *, tree, int *, int *,
-					int *, int *));
-static void precompute_register_parameters	PROTO ((int, struct arg_data *,
-							int *));
-static void store_one_arg	PROTO ((struct arg_data *, rtx, int, int,
-					int));
-static void store_unaligned_arguments_into_pseudos PROTO ((struct arg_data *,
-							   int));
+				        int, rtx, int);
+static void special_function_p	(char *, tree, int *, int *,
+					int *, int *);
+static void precompute_register_parameters	(int, struct arg_data *,
+							int *);
+static void store_one_arg	(struct arg_data *, rtx, int, int,
+					int);
+static void store_unaligned_arguments_into_pseudos (struct arg_data *,
+							   int);
 
 #if defined(ACCUMULATE_OUTGOING_ARGS) && defined(REG_PARM_STACK_SPACE)
-static rtx save_fixed_argument_area	PROTO ((int, rtx, int *, int *));
-static void restore_fixed_argument_area	PROTO ((rtx, rtx, int, int));
+static rtx save_fixed_argument_area	(int, rtx, int *, int *);
+static void restore_fixed_argument_area	(rtx, rtx, int, int);
 #endif
 
 /* If WHICH is 1, return 1 if EXP contains a call to the built-in function
@@ -781,13 +774,6 @@ store_unaligned_arguments_into_pseudos (args, num_actuals)
 	args[i].aligned_regs = (rtx *) xmalloc (sizeof (rtx)
 						* args[i].n_aligned_regs);
 
-	/* Structures smaller than a word are aligned to the least
-	   significant byte (to the right).  On a BYTES_BIG_ENDIAN machine,
-	   this means we must skip the empty high order bytes when
-	   calculating the bit offset.  */
-	if (BYTES_BIG_ENDIAN && bytes < UNITS_PER_WORD)
-	  big_endian_correction = (BITS_PER_WORD  - (bytes * BITS_PER_UNIT));
-
 	for (j = 0; j < args[i].n_aligned_regs; j++)
 	  {
 	    rtx reg = gen_reg_rtx (word_mode);
@@ -892,11 +878,7 @@ expand_call (exp, target, ignore)
      So the entire argument block must then be preallocated (i.e., we
      ignore PUSH_ROUNDING in that case).  */
 
-#ifdef PUSH_ROUNDING
-  int must_preallocate = 0;
-#else
   int must_preallocate = 1;
-#endif
 
   /* Size of the stack reserved for parameter registers.  */
   int reg_parm_stack_space = 0;
@@ -1007,10 +989,6 @@ expand_call (exp, target, ignore)
 #endif
 #endif
 
-#if defined(PUSH_ROUNDING) && ! defined(OUTGOING_REG_PARM_STACK_SPACE)
-  if (reg_parm_stack_space > 0)
-    must_preallocate = 1;
-#endif
 
   /* Warn if this value is an aggregate type,
      regardless of which calling convention we are using for it.  */
@@ -1025,21 +1003,6 @@ expand_call (exp, target, ignore)
       /* This call returns a big structure.  */
       is_const = 0;
 
-#ifdef PCC_STATIC_STRUCT_RETURN
-      {
-	pcc_struct_value = 1;
-	/* Easier than making that case work right.  */
-	if (is_integrable)
-	  {
-	    /* In case this is a static function, note that it has been
-	       used.  */
-	    if (! TREE_ADDRESSABLE (fndecl))
-	      mark_addressable (fndecl);
-	    is_integrable = 0;
-	  }
-      }
-#else /* not PCC_STATIC_STRUCT_RETURN */
-      {
 	struct_value_size = int_size_in_bytes (TREE_TYPE (exp));
 
 	if (target && GET_CODE (target) == MEM)
@@ -1065,8 +1028,6 @@ expand_call (exp, target, ignore)
 	    TREE_USED (d) = 1;
 	    target = 0;
 	  }
-      }
-#endif /* not PCC_STATIC_STRUCT_RETURN */
     }
 
   /* If called function is inline, try to integrate it.  */
@@ -1271,7 +1232,7 @@ expand_call (exp, target, ignore)
 
   /* Make a vector to hold all the information about each arg.  */
   args = (struct arg_data *) alloca (num_actuals * sizeof (struct arg_data));
-  bzero ((char *) args, num_actuals * sizeof (struct arg_data));
+  zero_memory ((char *) args, num_actuals * sizeof (struct arg_data));
 
   args_size.constant = 0;
   args_size.var = 0;
@@ -1747,11 +1708,11 @@ expand_call (exp, target, ignore)
 	  stack_usage_map = (char *) alloca (highest_outgoing_arg_in_use);
 
 	  if (initial_highest_arg_in_use)
-	    bcopy (initial_stack_usage_map, stack_usage_map,
+	    copy_memory (initial_stack_usage_map, stack_usage_map,
 		   initial_highest_arg_in_use);
 
 	  if (initial_highest_arg_in_use != highest_outgoing_arg_in_use)
-	    bzero (&stack_usage_map[initial_highest_arg_in_use],
+	    zero_memory (&stack_usage_map[initial_highest_arg_in_use],
 		   highest_outgoing_arg_in_use - initial_highest_arg_in_use);
 	  needed = 0;
 
@@ -1819,7 +1780,7 @@ expand_call (exp, target, ignore)
 	  stack_arg_under_construction = 0;
 	  /* Make a new map for the new argument list.  */
 	  stack_usage_map = (char *)alloca (highest_outgoing_arg_in_use);
-	  bzero (stack_usage_map, highest_outgoing_arg_in_use);
+	  zero_memory (stack_usage_map, highest_outgoing_arg_in_use);
 	  highest_outgoing_arg_in_use = 0;
 	}
       allocate_dynamic_stack_space (push_size, NULL_RTX, BITS_PER_UNIT);
@@ -2349,15 +2310,8 @@ expand_call (exp, target, ignore)
    move memory references across the non-const call.  */
 
 void
-emit_library_call VPROTO((rtx orgfun, int no_queue, enum machine_mode outmode,
-			  int nargs, ...))
+emit_library_call (rtx orgfun, int no_queue, enum machine_mode outmode, int nargs, ...)
 {
-#ifndef ANSI_PROTOTYPES
-  rtx orgfun;
-  int no_queue;
-  enum machine_mode outmode;
-  int nargs;
-#endif
   va_list p;
   /* Total size in bytes of all the stack-parms scanned so far.  */
   struct args_size args_size;
@@ -2397,14 +2351,8 @@ emit_library_call VPROTO((rtx orgfun, int no_queue, enum machine_mode outmode,
 #endif
 #endif
 
-  VA_START (p, nargs);
+  va_start (p, nargs);
 
-#ifndef ANSI_PROTOTYPES
-  orgfun = va_arg (p, rtx);
-  no_queue = va_arg (p, int);
-  outmode = va_arg (p, enum machine_mode);
-  nargs = va_arg (p, int);
-#endif
 
   fun = orgfun;
 
@@ -2416,7 +2364,7 @@ emit_library_call VPROTO((rtx orgfun, int no_queue, enum machine_mode outmode,
      library functions shouldn't have many args.  */
 
   argvec = (struct arg *) alloca (nargs * sizeof (struct arg));
-  bzero ((char *) argvec, nargs * sizeof (struct arg));
+  zero_memory ((char *) argvec, nargs * sizeof (struct arg));
 
 
   INIT_CUMULATIVE_ARGS (args_so_far, NULL_TREE, fun, 0);
@@ -2553,11 +2501,11 @@ emit_library_call VPROTO((rtx orgfun, int no_queue, enum machine_mode outmode,
   stack_usage_map = (char *) alloca (highest_outgoing_arg_in_use);
 
   if (initial_highest_arg_in_use)
-    bcopy (initial_stack_usage_map, stack_usage_map,
+    copy_memory (initial_stack_usage_map, stack_usage_map,
 	   initial_highest_arg_in_use);
 
   if (initial_highest_arg_in_use != highest_outgoing_arg_in_use)
-    bzero (&stack_usage_map[initial_highest_arg_in_use],
+    zero_memory (&stack_usage_map[initial_highest_arg_in_use],
 	   highest_outgoing_arg_in_use - initial_highest_arg_in_use);
   needed = 0;
 
@@ -2568,9 +2516,7 @@ emit_library_call VPROTO((rtx orgfun, int no_queue, enum machine_mode outmode,
 
   argblock = virtual_outgoing_args_rtx;
 #else /* not ACCUMULATE_OUTGOING_ARGS */
-#ifndef PUSH_ROUNDING
   argblock = push_block (GEN_INT (args_size.constant), 0, 0);
-#endif
 #endif
 
 #ifdef PUSH_ARGS_REVERSED
@@ -2839,16 +2785,9 @@ emit_library_call VPROTO((rtx orgfun, int no_queue, enum machine_mode outmode,
    If VALUE is nonzero, VALUE is returned.  */
 
 rtx
-emit_library_call_value VPROTO((rtx orgfun, rtx value, int no_queue,
-				enum machine_mode outmode, int nargs, ...))
+emit_library_call_value (rtx orgfun, rtx value, int no_queue,
+				enum machine_mode outmode, int nargs, ...)
 {
-#ifndef ANSI_PROTOTYPES
-  rtx orgfun;
-  rtx value;
-  int no_queue;
-  enum machine_mode outmode;
-  int nargs;
-#endif
   va_list p;
   /* Total size in bytes of all the stack-parms scanned so far.  */
   struct args_size args_size;
@@ -2895,15 +2834,8 @@ emit_library_call_value VPROTO((rtx orgfun, rtx value, int no_queue,
 #endif
 #endif
 
-  VA_START (p, nargs);
+  va_start (p, nargs);
 
-#ifndef ANSI_PROTOTYPES
-  orgfun = va_arg (p, rtx);
-  value = va_arg (p, rtx);
-  no_queue = va_arg (p, int);
-  outmode = va_arg (p, enum machine_mode);
-  nargs = va_arg (p, int);
-#endif
 
   is_const = no_queue;
   fun = orgfun;
@@ -2912,21 +2844,11 @@ emit_library_call_value VPROTO((rtx orgfun, rtx value, int no_queue,
      decide where in memory it should come back.  */
   if (aggregate_value_p (type_for_mode (outmode, 0)))
     {
-#ifdef PCC_STATIC_STRUCT_RETURN
-      rtx pointer_reg
-	= hard_function_value (build_pointer_type (type_for_mode (outmode, 0)),
-			       0);
-      mem_value = gen_rtx_MEM (outmode, pointer_reg);
-      pcc_struct_value = 1;
-      if (value == 0)
-	value = gen_reg_rtx (outmode);
-#else /* not PCC_STATIC_STRUCT_RETURN */
       struct_value_size = GET_MODE_SIZE (outmode);
       if (value != 0 && GET_CODE (value) == MEM)
 	mem_value = value;
       else
 	mem_value = assign_stack_temp (outmode, GET_MODE_SIZE (outmode), 0);
-#endif
 
       /* This call returns a big structure.  */
       is_const = 0;
@@ -2942,7 +2864,7 @@ emit_library_call_value VPROTO((rtx orgfun, rtx value, int no_queue,
      library functions shouldn't have many args.  */
 
   argvec = (struct arg *) alloca ((nargs + 1) * sizeof (struct arg));
-  bzero ((char *) argvec, (nargs + 1) * sizeof (struct arg));
+  zero_memory ((char *) argvec, (nargs + 1) * sizeof (struct arg));
 
   INIT_CUMULATIVE_ARGS (args_so_far, NULL_TREE, fun, 0);
 
@@ -3116,11 +3038,11 @@ emit_library_call_value VPROTO((rtx orgfun, rtx value, int no_queue,
   stack_usage_map = (char *) alloca (highest_outgoing_arg_in_use);
 
   if (initial_highest_arg_in_use)
-    bcopy (initial_stack_usage_map, stack_usage_map,
+    copy_memory (initial_stack_usage_map, stack_usage_map,
 	   initial_highest_arg_in_use);
 
   if (initial_highest_arg_in_use != highest_outgoing_arg_in_use)
-    bzero (&stack_usage_map[initial_highest_arg_in_use],
+    zero_memory (&stack_usage_map[initial_highest_arg_in_use],
 	   highest_outgoing_arg_in_use - initial_highest_arg_in_use);
   needed = 0;
 
@@ -3131,9 +3053,7 @@ emit_library_call_value VPROTO((rtx orgfun, rtx value, int no_queue,
 
   argblock = virtual_outgoing_args_rtx;
 #else /* not ACCUMULATE_OUTGOING_ARGS */
-#ifndef PUSH_ROUNDING
   argblock = push_block (GEN_INT (args_size.constant), 0, 0);
-#endif
 #endif
 
 #ifdef PUSH_ARGS_REVERSED
@@ -3664,9 +3584,6 @@ store_one_arg (arg, argblock, may_be_alloca, variable_size,
       /* Compute how much space the push instruction will push.
 	 On many machines, pushing a byte will advance the stack
 	 pointer by a halfword.  */
-#ifdef PUSH_ROUNDING
-      size = PUSH_ROUNDING (size);
-#endif
       used = size;
 
       /* Compute how much space the argument should get:

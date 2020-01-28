@@ -41,8 +41,8 @@ typedef union varray_data_tag {
   long			 l[1];
   unsigned long		 ul[1];
   HOST_WIDE_INT		 hint[1];
-  unsigned HOST_WIDE_INT uhint[1];
-  GENERIC_PTR		 generic[1];
+  HOST_WIDE_UINT uhint[1];
+  void *		 generic[1];
   char			 *cptr[1];
   struct rtx_def	 *rtx[1];
   struct rtvec_def	 *rtvec[1];
@@ -62,7 +62,7 @@ typedef struct varray_head_tag {
 
 /* Allocate a virtual array with NUM elements, each of which is SIZE bytes
    long, named NAME.  Array elements are zeroed.  */
-extern varray_type varray_init	PROTO ((size_t, size_t, const char *));
+extern varray_type varray_init	(size_t, size_t, const char *);
 
 #define VARRAY_CHAR_INIT(va, num, name) \
   va = varray_init (num, sizeof (char), name)
@@ -92,10 +92,10 @@ extern varray_type varray_init	PROTO ((size_t, size_t, const char *));
   va = varray_init (num, sizeof (HOST_WIDE_INT), name)
 
 #define VARRAY_UWIDE_INT_INIT(va, num, name) \
-  va = varray_init (num, sizeof (unsigned HOST_WIDE_INT), name)
+  va = varray_init (num, sizeof (HOST_WIDE_UINT), name)
 
 #define VARRAY_GENERIC_PTR_INIT(va, num, name) \
-  va = varray_init (num, sizeof (GENERIC_PTR), name)
+  va = varray_init (num, sizeof (void *), name)
 
 #define VARRAY_CHAR_PTR_INIT(va, num, name) \
   va = varray_init (num, sizeof (char *), name)
@@ -124,7 +124,7 @@ extern varray_type varray_init	PROTO ((size_t, size_t, const char *));
   do { if (vp) { free (vp); vp = (varray_type)0; } } while (0)
 
 /* Grow/shrink the virtual array VA to N elements.  */
-extern varray_type varray_grow	PROTO((varray_type, size_t));
+extern varray_type varray_grow	(varray_type, size_t);
 
 #define VARRAY_GROW(VA, N) ((VA) = varray_grow (VA, N))
 

@@ -24,94 +24,24 @@ Boston, MA 02111-1307, USA.  */
 /* Strictly speaking, this isn't the proper place to include these definitions,
    but this file is included by every GCC file. */
 
-/* Find the largest host integer type and set its size and type.  */
+#include <stdint.h>
+#include <inttypes.h>
 
-#ifndef HOST_BITS_PER_WIDE_INT
+#define HOST_BITS_PER_WIDE_INT 32
+#define HOST_WIDE_INT int32_t
+#define HOST_WIDE_UINT uint32_t
 
-#if HOST_BITS_PER_LONG > HOST_BITS_PER_INT
-#define HOST_BITS_PER_WIDE_INT HOST_BITS_PER_LONG
-#define HOST_WIDE_INT long
-#else
-#define HOST_BITS_PER_WIDE_INT HOST_BITS_PER_INT
-#define HOST_WIDE_INT int
-#endif
+/* Provide HOST_WIDE_INT format specs.  */
 
-#endif
+#define HOST_WIDE_INT_PRINT_DEC "%" PRId32
 
-/* Provide a default way to print an address in hex via printf.  */
+#define HOST_WIDE_INT_PRINT_UNSIGNED "%" PRIu32
 
-#ifndef HOST_PTR_PRINTF
-# ifdef HAVE_PRINTF_PTR
-#  define HOST_PTR_PRINTF "%p"
-# else
-#  define HOST_PTR_PRINTF \
-    (sizeof (int) == sizeof (char *) ? "%x" \
-     : sizeof (long) == sizeof (char *) ? "%lx" : "%llx")
-# endif
-#endif /* ! HOST_PTR_PRINTF */
+#define HOST_WIDE_INT_PRINT_HEX "0x%" PRIx32
 
-/* Provide defaults for the way to print a HOST_WIDE_INT
-   in various manners.  */
+#define HOST_WIDE_INT_PRINT_DOUBLE_HEX "0x%" PRIx32 "%08" PRIx32
 
-#ifndef HOST_WIDE_INT_PRINT_DEC
-#if HOST_BITS_PER_WIDE_INT == HOST_BITS_PER_INT
-#define HOST_WIDE_INT_PRINT_DEC "%d"
-#else
-#if HOST_BITS_PER_WIDE_INT == HOST_BITS_PER_LONG
-#define HOST_WIDE_INT_PRINT_DEC "%ld"
-#else
-#define HOST_WIDE_INT_PRINT_DEC "%lld"
-#endif
-#endif
-#endif
-
-#ifndef HOST_WIDE_INT_PRINT_UNSIGNED
-#if HOST_BITS_PER_WIDE_INT == HOST_BITS_PER_INT
-#define HOST_WIDE_INT_PRINT_UNSIGNED "%u"
-#else
-#if HOST_BITS_PER_WIDE_INT == HOST_BITS_PER_LONG
-#define HOST_WIDE_INT_PRINT_UNSIGNED "%lu"
-#else
-#define HOST_WIDE_INT_PRINT_UNSIGNED "%llu"
-#endif
-#endif
-#endif
-
-#ifndef HOST_WIDE_INT_PRINT_HEX
-#if HOST_BITS_PER_WIDE_INT == HOST_BITS_PER_INT
-#define HOST_WIDE_INT_PRINT_HEX "0x%x"
-#else
-#if HOST_BITS_PER_WIDE_INT == HOST_BITS_PER_LONG
-#define HOST_WIDE_INT_PRINT_HEX "0x%lx"
-#else
-#define HOST_WIDE_INT_PRINT_HEX "0x%llx"
-#endif
-#endif
-#endif
-
-#ifndef HOST_WIDE_INT_PRINT_DOUBLE_HEX
-#if HOST_BITS_PER_WIDE_INT == 64
-#if HOST_BITS_PER_WIDE_INT == HOST_BITS_PER_INT
-#define HOST_WIDE_INT_PRINT_DOUBLE_HEX "0x%x%016x"
-#else
-#if HOST_BITS_PER_WIDE_INT == HOST_BITS_PER_LONG
-#define HOST_WIDE_INT_PRINT_DOUBLE_HEX "0x%lx%016lx"
-#else
-#define HOST_WIDE_INT_PRINT_DOUBLE_HEX "0x%llx%016llx"
-#endif
-#endif
-#else
-#if HOST_BITS_PER_WIDE_INT == HOST_BITS_PER_INT
-#define HOST_WIDE_INT_PRINT_DOUBLE_HEX "0x%x%08x"
-#else
-#if HOST_BITS_PER_WIDE_INT == HOST_BITS_PER_LONG
-#define HOST_WIDE_INT_PRINT_DOUBLE_HEX "0x%lx%08lx"
-#else
-#define HOST_WIDE_INT_PRINT_DOUBLE_HEX "0x%llx%08llx"
-#endif
-#endif
-#endif
-#endif
+#define HOST_WIDE_INT_SCAN_DEC "%" SCNd32
 
 /* Make an enum class that gives all the machine modes.  */
 
@@ -148,7 +78,6 @@ extern enum mode_class mode_class[];
 /* Nonzero if MODE is an integral mode.  */
 #define INTEGRAL_MODE_P(MODE)			\
   (GET_MODE_CLASS (MODE) == MODE_INT		\
-   || GET_MODE_CLASS (MODE) == MODE_PARTIAL_INT \
    || GET_MODE_CLASS (MODE) == MODE_COMPLEX_INT)
 
 /* Nonzero if MODE is a floating-point mode.  */
@@ -184,7 +113,7 @@ extern int mode_unit_size[];
 /* Get a bitmask containing 1 for all bits in a word
    that fit within mode MODE.  */
 
-extern unsigned HOST_WIDE_INT mode_mask_array[];
+extern HOST_WIDE_UINT mode_mask_array[];
 
 #define GET_MODE_MASK(MODE) mode_mask_array[(int) (MODE)]
 
@@ -197,16 +126,16 @@ extern unsigned char mode_wider_mode[];
    If LIMIT is nonzero, then don't use modes bigger than MAX_FIXED_MODE_SIZE.
    The value is BLKmode if no other mode is found.  */
 
-extern enum machine_mode mode_for_size PROTO((unsigned int, enum mode_class, int));
+extern enum machine_mode mode_for_size (unsigned int, enum mode_class, int);
 
 /* Return an integer mode of the exact same size as the input mode,
    or BLKmode on failure.  */
 
-extern enum machine_mode int_mode_for_mode PROTO((enum machine_mode));
+extern enum machine_mode int_mode_for_mode (enum machine_mode);
 
 /* Find the best mode to use to access a bit field.  */
 
-extern enum machine_mode get_best_mode PROTO((int, int, int, enum machine_mode, int));
+extern enum machine_mode get_best_mode (int, int, int, enum machine_mode, int);
 
 /* Determine alignment, 1<=result<=BIGGEST_ALIGNMENT.  */
 

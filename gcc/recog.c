@@ -50,10 +50,10 @@ Boston, MA 02111-1307, USA.  */
 #endif
 #endif
 
-static void validate_replace_rtx_1	PROTO((rtx *, rtx, rtx, rtx));
-static rtx *find_single_use_1		PROTO((rtx, rtx *));
-static rtx *find_constant_term_loc	PROTO((rtx *));
-static int insn_invalid_p		PROTO((rtx));
+static void validate_replace_rtx_1	(rtx *, rtx, rtx, rtx);
+static rtx *find_single_use_1		(rtx, rtx *);
+static rtx *find_constant_term_loc	(rtx *);
+static int insn_invalid_p		(rtx);
 
 /* Nonzero means allow operands to be volatile.
    This should be 0 if you are generating rtl, such as if you are calling
@@ -150,7 +150,7 @@ recog_memoized (insn)
      rtx insn;
 {
   if (INSN_CODE (insn) < 0)
-    INSN_CODE (insn) = recog (PATTERN (insn), insn, NULL_PTR);
+    INSN_CODE (insn) = recog (PATTERN (insn), insn, NULL);
   return INSN_CODE (insn);
 }
 
@@ -171,7 +171,7 @@ check_asm_operands (x)
     return 1;
 
   operands = (rtx *) alloca (noperands * sizeof (rtx));
-  decode_asm_operands (x, operands, NULL_PTR, NULL_PTR, NULL_PTR);
+  decode_asm_operands (x, operands, NULL, NULL, NULL);
 
   for (i = 0; i < noperands; i++)
     if (!general_operand (operands[i], VOIDmode))
@@ -523,11 +523,6 @@ validate_replace_rtx_1 (loc, from, to, object)
 	  enum machine_mode mode = GET_MODE (x);
 	  rtx new;
 
-	  if (BYTES_BIG_ENDIAN)
-	    offset += (MIN (UNITS_PER_WORD,
-			    GET_MODE_SIZE (GET_MODE (SUBREG_REG (x))))
-		       - MIN (UNITS_PER_WORD, GET_MODE_SIZE (mode)));
-
 	  new = gen_rtx_MEM (mode, plus_constant (XEXP (to, 0), offset));
 	  RTX_UNCHANGING_P (new) = RTX_UNCHANGING_P (to);
 	  MEM_COPY_ATTRIBUTES (new, to);
@@ -553,22 +548,12 @@ validate_replace_rtx_1 (loc, from, to, object)
 	  enum machine_mode is_mode = GET_MODE (to);
 	  int pos = INTVAL (XEXP (x, 2));
 
-#ifdef HAVE_extzv
-	  if (code == ZERO_EXTRACT)
+      if (code == ZERO_EXTRACT)
 	    {
 	      wanted_mode = insn_operand_mode[(int) CODE_FOR_extzv][1];
 	      if (wanted_mode == VOIDmode)
 		wanted_mode = word_mode;
 	    }
-#endif
-#ifdef HAVE_extv
-	  if (code == SIGN_EXTRACT)
-	    {
-	      wanted_mode = insn_operand_mode[(int) CODE_FOR_extv][1];
-	      if (wanted_mode == VOIDmode)
-		wanted_mode = word_mode;
-	    }
-#endif
 
 	  /* If we have a narrower mode, we can do something.  */
 	  if (wanted_mode != VOIDmode
@@ -576,12 +561,6 @@ validate_replace_rtx_1 (loc, from, to, object)
 	    {
 	      int offset = pos / BITS_PER_UNIT;
 	      rtx newmem;
-
-		  /* If the bytes and bits are counted differently, we
-		     must adjust the offset.  */
-	      if (BYTES_BIG_ENDIAN != BITS_BIG_ENDIAN)
-		offset = (GET_MODE_SIZE (is_mode) - GET_MODE_SIZE (wanted_mode)
-			  - offset);
 
 	      pos %= GET_MODE_BITSIZE (wanted_mode);
 
@@ -904,15 +883,11 @@ general_operand (op, mode)
   /* Don't accept CONST_INT or anything similar
      if the caller wants something floating.  */
   if (GET_MODE (op) == VOIDmode && mode != VOIDmode
-      && GET_MODE_CLASS (mode) != MODE_INT
-      && GET_MODE_CLASS (mode) != MODE_PARTIAL_INT)
+      && GET_MODE_CLASS (mode) != MODE_INT)
     return 0;
 
   if (CONSTANT_P (op))
     return ((GET_MODE (op) == VOIDmode || GET_MODE (op) == mode)
-#ifdef LEGITIMATE_PIC_OPERAND_P
-	    && (! flag_pic || LEGITIMATE_PIC_OPERAND_P (op))
-#endif
 	    && LEGITIMATE_CONSTANT_P (op));
 
   /* Except for certain constants with VOIDmode, already checked for,
@@ -923,14 +898,6 @@ general_operand (op, mode)
 
   if (code == SUBREG)
     {
-#ifdef INSN_SCHEDULING
-      /* On machines that have insn scheduling, we want all memory
-	 reference to be explicit, so outlaw paradoxical SUBREGs.  */
-      if (GET_CODE (SUBREG_REG (op)) == MEM
-	  && GET_MODE_SIZE (mode) > GET_MODE_SIZE (GET_MODE (SUBREG_REG (op))))
-	return 0;
-#endif
-
       op = SUBREG_REG (op);
       code = GET_CODE (op);
 #if 0
@@ -1066,16 +1033,12 @@ immediate_operand (op, mode)
   /* Don't accept CONST_INT or anything similar
      if the caller wants something floating.  */
   if (GET_MODE (op) == VOIDmode && mode != VOIDmode
-      && GET_MODE_CLASS (mode) != MODE_INT
-      && GET_MODE_CLASS (mode) != MODE_PARTIAL_INT)
+      && GET_MODE_CLASS (mode) != MODE_INT)
     return 0;
 
   return (CONSTANT_P (op)
 	  && (GET_MODE (op) == mode || mode == VOIDmode
 	      || GET_MODE (op) == VOIDmode)
-#ifdef LEGITIMATE_PIC_OPERAND_P
-	  && (! flag_pic || LEGITIMATE_PIC_OPERAND_P (op))
-#endif
 	  && LEGITIMATE_CONSTANT_P (op));
 }
 
@@ -1100,8 +1063,7 @@ const_double_operand (op, mode)
   /* Don't accept CONST_INT or anything similar
      if the caller wants something floating.  */
   if (GET_MODE (op) == VOIDmode && mode != VOIDmode
-      && GET_MODE_CLASS (mode) != MODE_INT
-      && GET_MODE_CLASS (mode) != MODE_PARTIAL_INT)
+      && GET_MODE_CLASS (mode) != MODE_INT)
     return 0;
 
   return ((GET_CODE (op) == CONST_DOUBLE || GET_CODE (op) == CONST_INT)
@@ -1131,14 +1093,10 @@ nonmemory_operand (op, mode)
       /* Don't accept CONST_INT or anything similar
 	 if the caller wants something floating.  */
       if (GET_MODE (op) == VOIDmode && mode != VOIDmode
-	  && GET_MODE_CLASS (mode) != MODE_INT
-	  && GET_MODE_CLASS (mode) != MODE_PARTIAL_INT)
+	  && GET_MODE_CLASS (mode) != MODE_INT)
 	return 0;
 
       return ((GET_MODE (op) == VOIDmode || GET_MODE (op) == mode)
-#ifdef LEGITIMATE_PIC_OPERAND_P
-	      && (! flag_pic || LEGITIMATE_PIC_OPERAND_P (op))
-#endif
 	      && LEGITIMATE_CONSTANT_P (op));
     }
 
@@ -1274,10 +1232,6 @@ indirect_operand (op, mode)
     {
       register int offset = SUBREG_WORD (op) * UNITS_PER_WORD;
       rtx inner = SUBREG_REG (op);
-
-      if (BYTES_BIG_ENDIAN)
-	offset -= (MIN (UNITS_PER_WORD, GET_MODE_SIZE (GET_MODE (op)))
-		   - MIN (UNITS_PER_WORD, GET_MODE_SIZE (GET_MODE (inner))));
 
       if (mode != VOIDmode && GET_MODE (op) != mode)
 	return 0;
@@ -1804,7 +1758,7 @@ extract_insn (insn)
 		recog_n_alternatives += (*p++ == ',');
 	    }
 #ifndef REGISTER_CONSTRAINTS
-	  bzero (recog_operand_address_p, sizeof recog_operand_address_p);
+	  zero_memory (recog_operand_address_p, sizeof recog_operand_address_p);
 #endif
 	  break;
 	}
@@ -2417,9 +2371,6 @@ split_block_insns (b, do_split)
 	    {
 	      /* try_split returns the NOTE that INSN became.  */
 	      first = NEXT_INSN (first);
-#ifdef INSN_SCHEDULING
-	      update_flow_info (notes, first, last, insn);
-#endif
 	      PUT_CODE (insn, NOTE);
 	      NOTE_SOURCE_FILE (insn) = 0;
 	      NOTE_LINE_NUMBER (insn) = NOTE_INSN_DELETED;

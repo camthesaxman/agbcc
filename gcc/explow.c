@@ -35,8 +35,8 @@ Boston, MA 02111-1307, USA.  */
 #define PREFERRED_STACK_BOUNDARY STACK_BOUNDARY
 #endif
 
-static rtx break_out_memory_refs	PROTO((rtx));
-static void emit_stack_probe		PROTO((rtx));
+static rtx break_out_memory_refs	(rtx);
+static void emit_stack_probe		(rtx);
 /* Return an rtx for the sum of X and the integer C.
 
    This function should be used via the `plus_constant' macro.  */
@@ -399,11 +399,7 @@ copy_all_regs (x)
 {
   if (GET_CODE (x) == REG)
     {
-      if (REGNO (x) != FRAME_POINTER_REGNUM
-#if HARD_FRAME_POINTER_REGNUM != FRAME_POINTER_REGNUM
-	  && REGNO (x) != HARD_FRAME_POINTER_REGNUM
-#endif
-	  )
+      if (REGNO (x) != FRAME_POINTER_REGNUM)
 	x = copy_to_reg (x);
     }
   else if (GET_CODE (x) == MEM)
@@ -892,7 +888,7 @@ emit_stack_save (save_level, psave, after)
 {
   rtx sa = *psave;
   /* The default is that we use a move insn and save in a Pmode object.  */
-  rtx (*fcn) PROTO ((rtx, rtx)) = gen_move_insn;
+  rtx (*fcn) (rtx, rtx) = gen_move_insn;
   enum machine_mode mode = STACK_SAVEAREA_MODE (save_level);
 
   /* See if this machine has anything special to do for this kind of save.  */
@@ -974,7 +970,7 @@ emit_stack_restore (save_level, sa, after)
      rtx sa;
 {
   /* The default is that we use a move insn.  */
-  rtx (*fcn) PROTO ((rtx, rtx)) = gen_move_insn;
+  rtx (*fcn) (rtx, rtx) = gen_move_insn;
 
   /* See if this machine has anything special to do for this kind of save.  */
   switch (save_level)
@@ -1426,13 +1422,13 @@ probe_stack_range (first, size)
 	  || REGNO (test_addr) < FIRST_PSEUDO_REGISTER)
 	test_addr = force_reg (Pmode, test_addr);
 
-      emit_note (NULL_PTR, NOTE_INSN_LOOP_BEG);
+      emit_note (NULL, NOTE_INSN_LOOP_BEG);
       emit_jump (test_lab);
 
       emit_label (loop_lab);
       emit_stack_probe (test_addr);
 
-      emit_note (NULL_PTR, NOTE_INSN_LOOP_CONT);
+      emit_note (NULL, NOTE_INSN_LOOP_CONT);
 
 #ifdef STACK_GROWS_DOWNWARD
 #define CMP_OPCODE GTU
@@ -1451,7 +1447,7 @@ probe_stack_range (first, size)
       emit_cmp_insn (test_addr, last_addr, CMP_OPCODE, NULL_RTX, Pmode, 1, 0);
       emit_jump_insn ((*bcc_gen_fctn[(int) CMP_OPCODE]) (loop_lab));
       emit_jump (end_lab);
-      emit_note (NULL_PTR, NOTE_INSN_LOOP_END);
+      emit_note (NULL, NOTE_INSN_LOOP_END);
       emit_label (end_lab);
 
       /* If will be doing stupid optimization, show test_addr is still live. */

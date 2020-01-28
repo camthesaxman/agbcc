@@ -53,57 +53,52 @@ Boston, MA 02111-1307, USA.  */
 /* Handle floating overflow for `const_binop'.  */
 static jmp_buf float_error;
 
-static void encode		PROTO((HOST_WIDE_INT *,
-				       HOST_WIDE_INT, HOST_WIDE_INT));
-static void decode		PROTO((HOST_WIDE_INT *,
-				       HOST_WIDE_INT *, HOST_WIDE_INT *));
-int div_and_round_double	PROTO((enum tree_code, int, HOST_WIDE_INT,
+static void encode		(HOST_WIDE_INT *,
+				       HOST_WIDE_INT, HOST_WIDE_INT);
+static void decode		(HOST_WIDE_INT *,
+				       HOST_WIDE_INT *, HOST_WIDE_INT *);
+int div_and_round_double	(enum tree_code, int, HOST_WIDE_INT,
 				       HOST_WIDE_INT, HOST_WIDE_INT,
 				       HOST_WIDE_INT, HOST_WIDE_INT *,
 				       HOST_WIDE_INT *, HOST_WIDE_INT *,
-				       HOST_WIDE_INT *));
-static int split_tree		PROTO((tree, enum tree_code, tree *,
-				       tree *, int *));
-static tree int_const_binop	PROTO((enum tree_code, tree, tree, int, int));
-static tree const_binop		PROTO((enum tree_code, tree, tree, int));
-static tree fold_convert	PROTO((tree, tree));
-static enum tree_code invert_tree_comparison PROTO((enum tree_code));
-static enum tree_code swap_tree_comparison PROTO((enum tree_code));
-static int truth_value_p	PROTO((enum tree_code));
-static int operand_equal_for_comparison_p PROTO((tree, tree, tree));
-static int twoval_comparison_p	PROTO((tree, tree *, tree *, int *));
-static tree eval_subst		PROTO((tree, tree, tree, tree, tree));
-static tree omit_one_operand	PROTO((tree, tree, tree));
-static tree pedantic_omit_one_operand PROTO((tree, tree, tree));
-static tree distribute_bit_expr PROTO((enum tree_code, tree, tree, tree));
-static tree make_bit_field_ref	PROTO((tree, tree, int, int, int));
-static tree optimize_bit_field_compare PROTO((enum tree_code, tree,
-					      tree, tree));
-static tree decode_field_reference PROTO((tree, int *, int *,
+				       HOST_WIDE_INT *);
+static int split_tree		(tree, enum tree_code, tree *,
+				       tree *, int *);
+static tree int_const_binop	(enum tree_code, tree, tree, int, int);
+static tree const_binop		(enum tree_code, tree, tree, int);
+static tree fold_convert	(tree, tree);
+static enum tree_code invert_tree_comparison (enum tree_code);
+static enum tree_code swap_tree_comparison (enum tree_code);
+static int truth_value_p	(enum tree_code);
+static int operand_equal_for_comparison_p (tree, tree, tree);
+static int twoval_comparison_p	(tree, tree *, tree *, int *);
+static tree eval_subst		(tree, tree, tree, tree, tree);
+static tree omit_one_operand	(tree, tree, tree);
+static tree pedantic_omit_one_operand (tree, tree, tree);
+static tree distribute_bit_expr (enum tree_code, tree, tree, tree);
+static tree make_bit_field_ref	(tree, tree, int, int, int);
+static tree optimize_bit_field_compare (enum tree_code, tree,
+					      tree, tree);
+static tree decode_field_reference (tree, int *, int *,
 					  enum machine_mode *, int *,
-					  int *, tree *, tree *));
-static int all_ones_mask_p	PROTO((tree, int));
-static int simple_operand_p	PROTO((tree));
+					  int *, tree *, tree *);
+static int all_ones_mask_p	(tree, int);
+static int simple_operand_p	(tree);
 /* CYGNUS LOCAL -- meissner/nortel */
-static int simple2_operand_p	PROTO((tree, int));
+static int simple2_operand_p	(tree, int);
 /* END CYGNUS LOCAL -- meissner/nortel */
-static tree range_binop		PROTO((enum tree_code, tree, tree, int,
-				       tree, int));
-static tree make_range		PROTO((tree, int *, tree *, tree *));
-static tree build_range_check	PROTO((tree, tree, int, tree, tree));
-static int merge_ranges		PROTO((int *, tree *, tree *, int, tree, tree,
-				       int, tree, tree));
-static tree fold_range_test	PROTO((tree));
-static tree unextend		PROTO((tree, int, int, tree));
-static tree fold_truthop	PROTO((enum tree_code, tree, tree, tree));
-static tree strip_compound_expr PROTO((tree, tree));
-static int multiple_of_p	PROTO((tree, tree, tree));
-static tree constant_boolean_node PROTO((int, tree));
-
-/* CYGNUS LOCAL law */
-static tree reduce_expression_tree_depth PROTO ((enum tree_code,
-						 tree, tree, tree));
-/* END CYGNUS LOCAL */
+static tree range_binop		(enum tree_code, tree, tree, int,
+				       tree, int);
+static tree make_range		(tree, int *, tree *, tree *);
+static tree build_range_check	(tree, tree, int, tree, tree);
+static int merge_ranges		(int *, tree *, tree *, int, tree, tree,
+				       int, tree, tree);
+static tree fold_range_test	(tree);
+static tree unextend		(tree, int, int, tree);
+static tree fold_truthop	(enum tree_code, tree, tree, tree);
+static tree strip_compound_expr (tree, tree);
+static int multiple_of_p	(tree, tree, tree);
+static tree constant_boolean_node (int, tree);
 
 #ifndef BRANCH_COST
 #define BRANCH_COST 1
@@ -121,10 +116,10 @@ static tree reduce_expression_tree_depth PROTO ((enum tree_code,
    HOST_BITS_PER_WIDE_INT/2 bits stored in each word, as a positive number.  */
 
 #define LOWPART(x) \
-  ((x) & (((unsigned HOST_WIDE_INT) 1 << (HOST_BITS_PER_WIDE_INT/2)) - 1))
+  ((x) & (((HOST_WIDE_UINT) 1 << (HOST_BITS_PER_WIDE_INT/2)) - 1))
 #define HIGHPART(x) \
-  ((unsigned HOST_WIDE_INT) (x) >> HOST_BITS_PER_WIDE_INT/2)
-#define BASE ((unsigned HOST_WIDE_INT) 1 << HOST_BITS_PER_WIDE_INT/2)
+  ((HOST_WIDE_UINT) (x) >> HOST_BITS_PER_WIDE_INT/2)
+#define BASE ((HOST_WIDE_UINT) 1 << HOST_BITS_PER_WIDE_INT/2)
 
 /* Unpack a two-word integer into 4 words.
    LOW and HI are the integer, as two `HOST_WIDE_INT' pieces.
@@ -253,7 +248,7 @@ add_double (l1, h1, l2, h2, lv, hv)
   HOST_WIDE_INT l, h;
 
   l = l1 + l2;
-  h = h1 + h2 + ((unsigned HOST_WIDE_INT) l < l1);
+  h = h1 + h2 + ((HOST_WIDE_UINT) l < l1);
 
   *lv = l;
   *hv = h;
@@ -298,14 +293,14 @@ mul_double (l1, h1, l2, h2, lv, hv)
   HOST_WIDE_INT arg1[4];
   HOST_WIDE_INT arg2[4];
   HOST_WIDE_INT prod[4 * 2];
-  register unsigned HOST_WIDE_INT carry;
+  register HOST_WIDE_UINT carry;
   register int i, j, k;
   HOST_WIDE_INT toplow, tophigh, neglow, neghigh;
 
   encode (arg1, l1, h1);
   encode (arg2, l2, h2);
 
-  bzero ((char *) prod, sizeof prod);
+  zero_memory ((char *) prod, sizeof prod);
 
   for (i = 0; i < 4; i++)
     {
@@ -367,14 +362,14 @@ lshift_double (l1, h1, count, prec, lv, hv, arith)
 
   if (count >= HOST_BITS_PER_WIDE_INT)
     {
-      *hv = (unsigned HOST_WIDE_INT) l1 << (count - HOST_BITS_PER_WIDE_INT);
+      *hv = (HOST_WIDE_UINT) l1 << (count - HOST_BITS_PER_WIDE_INT);
       *lv = 0;
     }
   else
     {
-      *hv = (((unsigned HOST_WIDE_INT) h1 << count)
-	     | ((unsigned HOST_WIDE_INT) l1 >> (HOST_BITS_PER_WIDE_INT - count - 1) >> 1));
-      *lv = (unsigned HOST_WIDE_INT) l1 << count;
+      *hv = (((HOST_WIDE_UINT) h1 << count)
+	     | ((HOST_WIDE_UINT) l1 >> (HOST_BITS_PER_WIDE_INT - count - 1) >> 1));
+      *lv = (HOST_WIDE_UINT) l1 << count;
     }
 }
 
@@ -390,9 +385,9 @@ rshift_double (l1, h1, count, prec, lv, hv, arith)
      HOST_WIDE_INT *lv, *hv;
      int arith;
 {
-  unsigned HOST_WIDE_INT signmask;
+  HOST_WIDE_UINT signmask;
   signmask = (arith
-	      ? -((unsigned HOST_WIDE_INT) h1 >> (HOST_BITS_PER_WIDE_INT - 1))
+	      ? -((HOST_WIDE_UINT) h1 >> (HOST_BITS_PER_WIDE_INT - 1))
 	      : 0);
 
 #ifdef SHIFT_COUNT_TRUNCATED
@@ -404,14 +399,14 @@ rshift_double (l1, h1, count, prec, lv, hv, arith)
     {
       *hv = signmask;
       *lv = ((signmask << (2 * HOST_BITS_PER_WIDE_INT - count - 1) << 1)
-	     | ((unsigned HOST_WIDE_INT) h1 >> (count - HOST_BITS_PER_WIDE_INT)));
+	     | ((HOST_WIDE_UINT) h1 >> (count - HOST_BITS_PER_WIDE_INT)));
     }
   else
     {
-      *lv = (((unsigned HOST_WIDE_INT) l1 >> count)
-	     | ((unsigned HOST_WIDE_INT) h1 << (HOST_BITS_PER_WIDE_INT - count - 1) << 1));
+      *lv = (((HOST_WIDE_UINT) l1 >> count)
+	     | ((HOST_WIDE_UINT) h1 << (HOST_BITS_PER_WIDE_INT - count - 1) << 1));
       *hv = ((signmask << (HOST_BITS_PER_WIDE_INT - count))
-	     | ((unsigned HOST_WIDE_INT) h1 >> count));
+	     | ((HOST_WIDE_UINT) h1 >> count));
     }
 }
 
@@ -483,8 +478,8 @@ div_and_round_double (code, uns,
   HOST_WIDE_INT num[4 + 1];	/* extra element for scaling.  */
   HOST_WIDE_INT den[4], quo[4];
   register int i, j;
-  unsigned HOST_WIDE_INT work;
-  register unsigned HOST_WIDE_INT carry = 0;
+  HOST_WIDE_UINT work;
+  register HOST_WIDE_UINT carry = 0;
   HOST_WIDE_INT lnum = lnum_orig;
   HOST_WIDE_INT hnum = hnum_orig;
   HOST_WIDE_INT lden = lden_orig;
@@ -515,7 +510,7 @@ div_and_round_double (code, uns,
     {				/* single precision */
       *hquo = *hrem = 0;
       /* This unsigned division rounds toward zero.  */
-      *lquo = lnum / (unsigned HOST_WIDE_INT) lden;
+      *lquo = lnum / (HOST_WIDE_UINT) lden;
       goto finish_up;
     }
 
@@ -528,10 +523,10 @@ div_and_round_double (code, uns,
       goto finish_up;
     }
 
-  bzero ((char *) quo, sizeof quo);
+  zero_memory ((char *) quo, sizeof quo);
 
-  bzero ((char *) num, sizeof num);	/* to zero 9th element */
-  bzero ((char *) den, sizeof den);
+  zero_memory ((char *) num, sizeof num);	/* to zero 9th element */
+  zero_memory ((char *) den, sizeof den);
 
   encode (num, lnum, hnum); 
   encode (den, lden, hden);
@@ -543,8 +538,8 @@ div_and_round_double (code, uns,
       for (i = 4 - 1; i >= 0; i--)
 	{
 	  work = num[i] + carry * BASE;
-	  quo[i] = work / (unsigned HOST_WIDE_INT) lden;
-	  carry = work % (unsigned HOST_WIDE_INT) lden;
+	  quo[i] = work / (HOST_WIDE_UINT) lden;
+	  carry = work % (HOST_WIDE_UINT) lden;
 	}
     }
   else
@@ -552,7 +547,7 @@ div_and_round_double (code, uns,
       /* Full double precision division,
 	 with thanks to Don Knuth's "Seminumerical Algorithms".  */
     int num_hi_sig, den_hi_sig;
-    unsigned HOST_WIDE_INT quo_est, scale;
+    HOST_WIDE_UINT quo_est, scale;
 
     /* Find the highest non-zero divisor digit.  */
     for (i = 4 - 1; ; i--)
@@ -588,7 +583,7 @@ div_and_round_double (code, uns,
       /* guess the next quotient digit, quo_est, by dividing the first
 	 two remaining dividend digits by the high order quotient digit.
 	 quo_est is never low and is at most 2 high.  */
-      unsigned HOST_WIDE_INT tmp;
+      HOST_WIDE_UINT tmp;
 
       num_hi_sig = i + den_hi_sig + 1;
       work = num[num_hi_sig] * BASE + num[num_hi_sig - 1];
@@ -691,12 +686,12 @@ div_and_round_double (code, uns,
 	/* if (2 * abs (lrem) >= abs (lden)) */
 	mul_double ((HOST_WIDE_INT) 2, (HOST_WIDE_INT) 0,
 		    labs_rem, habs_rem, &ltwice, &htwice);
-	if (((unsigned HOST_WIDE_INT) habs_den
-	     < (unsigned HOST_WIDE_INT) htwice)
-	    || (((unsigned HOST_WIDE_INT) habs_den
-		 == (unsigned HOST_WIDE_INT) htwice)
-		&& ((HOST_WIDE_INT unsigned) labs_den
-		    < (unsigned HOST_WIDE_INT) ltwice)))
+	if (((HOST_WIDE_UINT) habs_den
+	     < (HOST_WIDE_UINT) htwice)
+	    || (((HOST_WIDE_UINT) habs_den
+		 == (HOST_WIDE_UINT) htwice)
+		&& ((HOST_WIDE_UINT) labs_den
+		    < (HOST_WIDE_UINT) ltwice)))
 	  {
 	    if (*hquo < 0)
 	      /* quo = quo - 1;  */
@@ -925,7 +920,7 @@ exact_real_inverse (mode, r)
     {
       /* Don't do the optimization if there was an arithmetic error.  */
 fail:
-      set_float_handler (NULL_PTR);
+      set_float_handler (NULL);
       return 0;
     }
   set_float_handler (float_error);
@@ -968,7 +963,7 @@ fail:
 #endif
 
   /* Output the reciprocal and return success flag.  */
-  set_float_handler (NULL_PTR);
+  set_float_handler (NULL);
   *r = y.d;
   return 1;
 }
@@ -985,7 +980,7 @@ real_hex_to_f (s, mode)
 {
    REAL_VALUE_TYPE ip;
    char *p = s;
-   unsigned HOST_WIDE_INT low, high;
+   HOST_WIDE_UINT low, high;
    int frexpon, expon, shcount, nrmcount, k;
    int sign, expsign, decpt, isfloat, isldouble, gotp, lost;
    char c;
@@ -1430,19 +1425,19 @@ int_const_binop (code, arg1, arg2, notrunc, forsize)
     case MAX_EXPR:
       if (uns)
 	{
-	  low = (((unsigned HOST_WIDE_INT) int1h
-		  < (unsigned HOST_WIDE_INT) int2h)
-		 || (((unsigned HOST_WIDE_INT) int1h
-		      == (unsigned HOST_WIDE_INT) int2h)
-		     && ((unsigned HOST_WIDE_INT) int1l
-			 < (unsigned HOST_WIDE_INT) int2l)));
+	  low = (((HOST_WIDE_UINT) int1h
+		  < (HOST_WIDE_UINT) int2h)
+		 || (((HOST_WIDE_UINT) int1h
+		      == (HOST_WIDE_UINT) int2h)
+		     && ((HOST_WIDE_UINT) int1l
+			 < (HOST_WIDE_UINT) int2l)));
 	}
       else
 	{
 	  low = ((int1h < int2h)
 		 || ((int1h == int2h)
-		     && ((unsigned HOST_WIDE_INT) int1l
-			 < (unsigned HOST_WIDE_INT) int2l)));
+		     && ((HOST_WIDE_UINT) int1l
+			 < (HOST_WIDE_UINT) int2l)));
 	}
       if (low == (code == MIN_EXPR))
 	low = int1l, hi = int1h;
@@ -1571,7 +1566,7 @@ const_binop (code, arg1, arg2, notrunc)
       t = build_real (TREE_TYPE (arg1),
 		      real_value_truncate (TYPE_MODE (TREE_TYPE (arg1)), value));
     got_float:
-      set_float_handler (NULL_PTR);
+      set_float_handler (NULL);
 
       TREE_OVERFLOW (t)
 	= (force_fit_type (t, overflow)
@@ -1668,7 +1663,7 @@ const_binop (code, arg1, arg2, notrunc)
 
 tree
 size_int_wide (number, high, bit_p)
-     unsigned HOST_WIDE_INT number, high;
+     HOST_WIDE_UINT number, high;
      int bit_p;
 {
   register tree t;
@@ -1903,7 +1898,7 @@ fold_convert (t, arg1)
 
 	  t = build_real (type, real_value_truncate (TYPE_MODE (type),
 						     TREE_REAL_CST (arg1)));
-	  set_float_handler (NULL_PTR);
+	  set_float_handler (NULL);
 
 	got_it:
 	  TREE_OVERFLOW (t)
@@ -2727,9 +2722,6 @@ optimize_bit_field_compare (code, compare_type, lhs, rhs)
       if (rnbitsize == rbitsize)
 	return 0;
     }
-
-  if (BYTES_BIG_ENDIAN)
-    lbitpos = lnbitsize - lbitsize - lbitpos;
 
   /* Make the mask to be used against the extracted field.  */
   mask = build_int_2 (~0, ~0);
@@ -4087,12 +4079,6 @@ fold_truthop (code, truth_type, lhs, rhs)
   type = type_for_size (lnbitsize, 1);
   xll_bitpos = ll_bitpos - lnbitpos, xrl_bitpos = rl_bitpos - lnbitpos;
 
-  if (BYTES_BIG_ENDIAN)
-    {
-      xll_bitpos = lnbitsize - xll_bitpos - ll_bitsize;
-      xrl_bitpos = lnbitsize - xrl_bitpos - rl_bitsize;
-    }
-
   ll_mask = const_binop (LSHIFT_EXPR, convert (type, ll_mask),
 			 size_int (xll_bitpos), 0);
   rl_mask = const_binop (LSHIFT_EXPR, convert (type, rl_mask),
@@ -4158,12 +4144,6 @@ fold_truthop (code, truth_type, lhs, rhs)
       rnbitsize = GET_MODE_BITSIZE (rnmode);
       rnbitpos = first_bit & ~ (rnbitsize - 1);
       xlr_bitpos = lr_bitpos - rnbitpos, xrr_bitpos = rr_bitpos - rnbitpos;
-
-      if (BYTES_BIG_ENDIAN)
-	{
-	  xlr_bitpos = rnbitsize - xlr_bitpos - lr_bitsize;
-	  xrr_bitpos = rnbitsize - xrr_bitpos - rr_bitsize;
-	}
 
       lr_mask = const_binop (LSHIFT_EXPR, convert (type, lr_mask),
 			     size_int (xlr_bitpos), 0);
@@ -4302,96 +4282,6 @@ constant_boolean_node (value, type)
       return t;
     }
 }
-
-/* CYGNUS LOCAL law */
-/* Flatten a tree by performing simple reassociations.  */
-
-static tree
-reduce_expression_tree_depth (code, type, arg0, arg1)
-     enum tree_code code;
-     tree type;
-     tree arg0;
-     tree arg1;
-{
-  tree ops[8];
-  int n_ops;
-  int i, j, changed;
-
-  bzero ((char *)ops, sizeof ops);
-
-  /* Place our operands into the expression array.  */
-  ops[0] = arg0;
-  ops[1] = arg1;
-  n_ops = 2;
-
-  /* Now we want to explode any entry in the array which has a matching
-     CODE and TYPE.  */
-  changed = 1;
-  while (changed)
-    {
-      changed = 0;
-
-      for (i = 0; i < n_ops; i++)
-	{
-	  if (TREE_CODE (ops[i]) == code && TREE_TYPE (ops[i]) == type)
-	    {
-	      if (n_ops == 8)
-		{
-		  tree t = build (code, type, arg0, arg1);
-
-		  TREE_CONSTANT (t)
-		    = (TREE_CONSTANT (arg0) && TREE_CONSTANT (arg1));
-		  return t;
-		}
-
-	      ops[n_ops] = TREE_OPERAND (ops[i], 1);
-	      ops[i] = TREE_OPERAND (ops[i], 0);
-	      n_ops++;
-	      changed = 1;
-	    }
-	}
-    }
-
-  /* If we do not have at least 4 operands, then no reductions
-     are possible.  */
-  if (n_ops <= 3)
-    {
-      tree t = build (code, type, arg0, arg1);
-
-      TREE_CONSTANT (t) = (TREE_CONSTANT (arg0) && TREE_CONSTANT (arg1));
-      return t;
-    }
-
-  /* Try to simplify each subtree.  */
-  for (i = 0; i < n_ops; i++)
-    fold (ops[i]);
-
-  /* Now simplify the operands pair-wise until nothing changes.  */
-  changed = 1;
-  while (changed)
-    {
-      changed = 0;
-
-      for (i = 0; i < n_ops - 1; i++)
-	for (j = i + 1; j < n_ops; j++)
-	  if (ops[i] != NULL_TREE && ops[j] != NULL_TREE)
-	    {
-	      tree t;
-
-	      t = build (code, type, ops[i], ops[j]);
-	      TREE_CONSTANT (t)
-		= (TREE_CONSTANT (ops[i]) && TREE_CONSTANT (ops[j]));
-	      ops[i] = t;
-	      ops[j] = 0;
-	      changed = 1;
-	      i++;
-	    }
-    }
-
-  /* ops[0] should have the fully reduced tree now.  */
-  return ops[0];
-}
-/* END CYGNUS LOCAL */
 
 /* Perform constant folding and related simplification of EXPR.
    The related simplifications include x*1 => x, x*0 => 0, etc.,
@@ -5169,29 +5059,6 @@ fold (expr)
 	      return t;
 	    }
 	}
-
-      /* CYGNUS LOCAL law */
-      /* If we are optimizing and performing instruction scheduling, then we
-	 want to flatten expression trees.  Doing so will expose more ILP at
-	 the cost of using more registers.
-
-	 Do not do this on floating point types, unless -ffast-math is
-	 enabled.  And even then only do so for multiplies.  */
-      if (optimize && flag_schedule_insns
-	  /* ??? reduce_expression_tree_depth doesn't handle MINUS correctly.
-	     It doesn't change MINUS to PLUS when necessary.  For instance
-	     a - b - b - b needs to be changed to (a - b) - (b + b).  */
-	  && code != MINUS_EXPR
-	  && (! FLOAT_TYPE_P (type)
-	      || (flag_fast_math && code == MULT_EXPR)))
-	{
-	  t = reduce_expression_tree_depth (code, type, arg0, arg1);
-	  code = TREE_CODE (t);
-	  arg0 = TREE_OPERAND (t, 0);
-	  arg1 = TREE_OPERAND (t, 1);
-	  type = TREE_TYPE (t);
-	}
-      /* END CYGNUS LOCAL */
 
     binary:
 #if defined (REAL_IS_NOT_DOUBLE) && ! defined (REAL_ARITHMETIC)

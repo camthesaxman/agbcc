@@ -42,11 +42,11 @@ Boston, MA 02111-1307, USA.  */
 #include "obstack.h"
 /* END CYGNUS LOCAL */
 
-static int optimize_reg_copy_1	PROTO((rtx, rtx, rtx));
-static void optimize_reg_copy_2	PROTO((rtx, rtx, rtx));
-static void optimize_reg_copy_3	PROTO((rtx, rtx, rtx));
-static rtx gen_add3_insn	PROTO((rtx, rtx, rtx));
-static void copy_src_to_dest	PROTO((rtx, rtx, rtx, int, int));
+static int optimize_reg_copy_1	(rtx, rtx, rtx);
+static void optimize_reg_copy_2	(rtx, rtx, rtx);
+static void optimize_reg_copy_3	(rtx, rtx, rtx);
+static rtx gen_add3_insn	(rtx, rtx, rtx);
+static void copy_src_to_dest	(rtx, rtx, rtx, int, int);
 static int *regmove_bb_head;
 
 struct match {
@@ -56,27 +56,27 @@ struct match {
   int early_clobber[MAX_RECOG_OPERANDS];
 };
 
-static int try_auto_increment PROTO((rtx, rtx, rtx, rtx, HOST_WIDE_INT, int));
-static int find_matches PROTO((rtx, struct match *));
-static int fixup_match_1 PROTO((rtx, rtx, rtx, rtx, rtx, int, int, int, FILE *))
+static int try_auto_increment (rtx, rtx, rtx, rtx, HOST_WIDE_INT, int);
+static int find_matches (rtx, struct match *);
+static int fixup_match_1 (rtx, rtx, rtx, rtx, rtx, int, int, int, FILE *)
 ;
-static int reg_is_remote_constant_p PROTO((rtx, rtx, rtx));
-static int stable_but_for_p PROTO((rtx, rtx, rtx));
-static int regclass_compatible_p PROTO((int, int));
+static int reg_is_remote_constant_p (rtx, rtx, rtx);
+static int stable_but_for_p (rtx, rtx, rtx);
+static int regclass_compatible_p (int, int);
 /* CYGNUS LOCAL SH4-OPT */
-static struct rel_use *lookup_related PROTO((int, enum reg_class, HOST_WIDE_INT));
-static void rel_build_chain PROTO((struct rel_use *, struct rel_use *, int));
-static void rel_record_mem PROTO((rtx *, rtx, int, int, int, rtx, int, int));
-static void invalidate_related PROTO((rtx, int));
-static void find_related PROTO((rtx *, rtx, int, int));
-static int chain_starts_earlier PROTO((const GENERIC_PTR, const GENERIC_PTR));
-static int chain_ends_later PROTO((const GENERIC_PTR, const GENERIC_PTR));
-static struct related *optimize_related_values_1 PROTO((struct related *, int,
-							int, rtx, FILE *));
-static void optimize_related_values_0 PROTO((struct related *, int, int,
-					     rtx, FILE *));
-static void optimize_related_values PROTO((int, FILE *));
-static void count_sets PROTO((rtx, rtx));
+static struct rel_use *lookup_related (int, enum reg_class, HOST_WIDE_INT);
+static void rel_build_chain (struct rel_use *, struct rel_use *, int);
+static void rel_record_mem (rtx *, rtx, int, int, int, rtx, int, int);
+static void invalidate_related (rtx, int);
+static void find_related (rtx *, rtx, int, int);
+static int chain_starts_earlier (const void *, const void *);
+static int chain_ends_later (const void *, const void *);
+static struct related *optimize_related_values_1 (struct related *, int,
+							int, rtx, FILE *);
+static void optimize_related_values_0 (struct related *, int, int,
+					     rtx, FILE *);
+static void optimize_related_values (int, FILE *);
+static void count_sets (rtx, rtx);
 /* END CYGNUS LOCAL */
 static int loop_depth;
 
@@ -222,7 +222,7 @@ try_auto_increment (insn, inc_insn, inc_insn_set, reg, increment, pre)
    execution of the instruction.
    Here we define the size of the hash table, and the hash function to use.  */
 #define REL_USE_HASH_SIZE 43
-#define REL_USE_HASH(I) ((I) % (unsigned HOST_WIDE_INT) REL_USE_HASH_SIZE)
+#define REL_USE_HASH(I) ((I) % (HOST_WIDE_UINT) REL_USE_HASH_SIZE)
 
 /* For each register in a set of registers that are related, we keep a
    struct related.
@@ -421,7 +421,7 @@ rel_build_chain (new_use, match, base)
       new_chain->chain = new_use;
       new_use->prev_chain_ref = &new_chain->chain;
       new_use->next_chain = 0;
-      new_use->next_chain = NULL_PTR;
+      new_use->next_chain = NULL;
       new_chain->linked = 0;
       new_chain->prev = regno_related[base]->baseinfo->chains;
       regno_related[base]->baseinfo->chains = new_chain;
@@ -506,20 +506,20 @@ rel_record_mem (addrp, addr, size, pre_offs, post_offs, insn, luid, call_tally)
 	  if (HAVE_PRE_INCREMENT && match)
 	    {
 	      PUT_CODE (auto_inc, PRE_INC);
-	      if (recog (PATTERN (insn), insn, NULL_PTR) >= 0)
+	      if (recog (PATTERN (insn), insn, NULL) >= 0)
 		break;
 	    }
 	  match = lookup_related (regno, class, offset + size);
 	  if (HAVE_PRE_DECREMENT && match)
 	    {
 	      PUT_CODE (auto_inc, PRE_DEC);
-	      if (recog (PATTERN (insn), insn, NULL_PTR) >= 0)
+	      if (recog (PATTERN (insn), insn, NULL) >= 0)
 		break;
 	    }
 	  match = 0;
 	}
       PUT_CODE (auto_inc, POST_INC);
-      if (HAVE_POST_INCREMENT && recog (PATTERN (insn), insn, NULL_PTR) >= 0)
+      if (HAVE_POST_INCREMENT && recog (PATTERN (insn), insn, NULL) >= 0)
 	{
 	  struct rel_use *inc_use;
 
@@ -527,14 +527,14 @@ rel_record_mem (addrp, addr, size, pre_offs, post_offs, insn, luid, call_tally)
 	  *inc_use = *new_use;
 	  inc_use->sibling = new_use;
 	  new_use->sibling = inc_use;
-	  inc_use->prev_chain_ref = NULL_PTR;
-	  inc_use->next_chain = NULL_PTR;
+	  inc_use->prev_chain_ref = NULL;
+	  inc_use->next_chain = NULL;
 	  hash = REL_USE_HASH (inc_use->match_offset = offset + size);
 	  inc_use->next_hash = regno_related[base]->baseinfo->hashtab[hash];
 	  regno_related[base]->baseinfo->hashtab[hash] = inc_use;
 	}
       PUT_CODE (auto_inc, POST_DEC);
-      if (HAVE_POST_DECREMENT && recog (PATTERN (insn), insn, NULL_PTR) >= 0)
+      if (HAVE_POST_DECREMENT && recog (PATTERN (insn), insn, NULL) >= 0)
 	{
 	  struct rel_use *dec_use;
 
@@ -542,8 +542,8 @@ rel_record_mem (addrp, addr, size, pre_offs, post_offs, insn, luid, call_tally)
 	  *dec_use = *new_use;
 	  dec_use->sibling = new_use->sibling;
 	  new_use->sibling = dec_use;
-	  dec_use->prev_chain_ref = NULL_PTR;
-	  dec_use->next_chain = NULL_PTR;
+	  dec_use->prev_chain_ref = NULL;
+	  dec_use->next_chain = NULL;
 	  hash = REL_USE_HASH (dec_use->match_offset = offset + size);
 	  dec_use->next_hash = regno_related[base]->baseinfo->hashtab[hash];
 	  regno_related[base]->baseinfo->hashtab[hash] = dec_use;
@@ -692,7 +692,7 @@ find_related (xp, insn, luid, call_tally)
 		new_related->invalidate_luid = 0;
 		new_related->death = NULL_RTX;
 		rel_new (new_related->baseinfo);
-		bzero ((char *) new_related->baseinfo,
+		zero_memory ((char *) new_related->baseinfo,
 		       sizeof *new_related->baseinfo);
 		new_related->baseinfo->prev_base = rel_base_list;
 		rel_base_list = new_related;
@@ -962,8 +962,8 @@ find_related (xp, insn, luid, call_tally)
 /* Comparison functions for qsort.  */
 static int
 chain_starts_earlier (chain1, chain2)
-     const GENERIC_PTR chain1;
-     const GENERIC_PTR chain2;
+     const void * chain1;
+     const void * chain2;
 {
   int d = ((*(struct rel_use_chain **)chain2)->start_luid
 	   - (*(struct rel_use_chain **)chain1)->start_luid);
@@ -988,8 +988,8 @@ chain_starts_earlier (chain1, chain2)
 
 static int
 chain_ends_later (chain1, chain2)
-     const GENERIC_PTR chain1;
-     const GENERIC_PTR chain2;
+     const void * chain1;
+     const void * chain2;
 {
   int d = ((*(struct rel_use_chain **)chain1)->end_luid
 	   - (*(struct rel_use_chain **)chain2)->end_luid);
@@ -1508,7 +1508,7 @@ optimize_related_values_1 (rel_base, luid, call_tally, insert_after,
     }
 
   /* Finally, clear the entries that we used in regno_related.  We do it
-     item by item here, because doing it with bzero for each basic block
+     item by item here, because doing it with zero_memory for each basic block
      would give O(n*n) time complexity.  */
   for (rel = rel_base; rel; rel = rel->prev)
     regno_related[REGNO (rel->reg)] = 0;
@@ -1623,7 +1623,7 @@ optimize_related_values (nregs, regmove_dump_file)
 
   gcc_obstack_init (&related_obstack);
   regno_related = rel_alloc (nregs * sizeof *regno_related);
-  bzero ((char *) regno_related, nregs * sizeof *regno_related);
+  zero_memory ((char *) regno_related, nregs * sizeof *regno_related);
   rel_base_list = 0;
   loop_depth = 1;
   for (insn = get_insns (); insn; insn = NEXT_INSN (insn))

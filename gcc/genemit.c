@@ -19,7 +19,7 @@ the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
 
-#include "hconfig.h"
+#include "config.h"
 #include "system.h"
 #include "rtl.h"
 #include "obstack.h"
@@ -30,9 +30,9 @@ struct obstack *rtl_obstack = &obstack;
 #define obstack_chunk_alloc xmalloc
 #define obstack_chunk_free free
 
-static void fatal PVPROTO ((const char *, ...))
+static void fatal (const char *, ...)
   ATTRIBUTE_PRINTF_1 ATTRIBUTE_NORETURN;
-void fancy_abort PROTO((void)) ATTRIBUTE_NORETURN;
+void fancy_abort (void) ATTRIBUTE_NORETURN;
 
 /* Define this so we can link with print-rtl.o to get debug_rtx function.  */
 char **insn_name_ptr = 0;
@@ -63,15 +63,15 @@ struct clobber_ent
   struct clobber_ent *next;
 };
 
-static void max_operand_1		PROTO((rtx));
-static int max_operand_vec		PROTO((rtx, int));
-static void print_code			PROTO((RTX_CODE));
-static void gen_exp			PROTO((rtx));
-static void gen_insn			PROTO((rtx));
-static void gen_expand			PROTO((rtx));
-static void gen_split			PROTO((rtx));
-static void output_add_clobbers		PROTO((void));
-static void output_init_mov_optab	PROTO((void));
+static void max_operand_1		(rtx);
+static int max_operand_vec		(rtx, int);
+static void print_code			(RTX_CODE);
+static void gen_exp			(rtx);
+static void gen_insn			(rtx);
+static void gen_expand			(rtx);
+static void gen_split			(rtx);
+static void output_add_clobbers		(void);
+static void output_init_mov_optab	(void);
 
 
 static void
@@ -678,11 +678,11 @@ output_init_mov_optab ()
 #endif
 }
 
-PTR
+void *
 xmalloc (size)
   size_t size;
 {
-  register PTR val = (PTR) malloc (size);
+  register void *val = malloc (size);
 
   if (val == 0)
     fatal ("virtual memory exhausted");
@@ -690,40 +690,34 @@ xmalloc (size)
   return val;
 }
 
-PTR
+void *
 xrealloc (old, size)
-  PTR old;
+  void *old;
   size_t size;
 {
-  register PTR ptr;
+  register void *ptr;
   if (old)
-    ptr = (PTR) realloc (old, size);
+    ptr = realloc (old, size);
   else
-    ptr = (PTR) malloc (size);
+    ptr = malloc (size);
   if (!ptr)
     fatal ("virtual memory exhausted");
   return ptr;
 }
 
 static void
-fatal VPROTO ((const char *format, ...))
+fatal (const char *format, ...)
 {
-#ifndef ANSI_PROTOTYPES
-  const char *format;
-#endif
   va_list ap;
 
-  VA_START (ap, format);
+  va_start (ap, format);
 
-#ifndef ANSI_PROTOTYPES
-  format = va_arg (ap, const char *);
-#endif
 
   fprintf (stderr, "genemit: ");
   vfprintf (stderr, format, ap);
   va_end (ap);
   fprintf (stderr, "\n");
-  exit (FATAL_EXIT_CODE);
+  exit (EXIT_FAILURE);
 }
 
 /* More 'friendly' abort that prints the line and file.
@@ -753,7 +747,7 @@ main (argc, argv)
   if (infile == 0)
     {
       perror (argv[1]);
-      exit (FATAL_EXIT_CODE);
+      exit (EXIT_FAILURE);
     }
 
   init_rtl ();
@@ -823,7 +817,7 @@ from the machine description file `md'.  */\n\n");
   output_init_mov_optab ();
 
   fflush (stdout);
-  exit (ferror (stdout) != 0 ? FATAL_EXIT_CODE : SUCCESS_EXIT_CODE);
+  exit (ferror (stdout) != 0 ? EXIT_FAILURE : EXIT_SUCCESS);
   /* NOTREACHED */
   return 0;
 }

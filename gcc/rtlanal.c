@@ -23,13 +23,13 @@ Boston, MA 02111-1307, USA.  */
 #include "system.h"
 #include "rtl.h"
 
-static int rtx_addr_can_trap_p	PROTO((rtx));
-static void reg_set_p_1		PROTO((rtx, rtx));
-static void reg_set_last_1	PROTO((rtx, rtx));
+static int rtx_addr_can_trap_p	(rtx);
+static void reg_set_p_1		(rtx, rtx);
+static void reg_set_last_1	(rtx, rtx);
 
 
 /* Forward declarations */
-static int jmp_uses_reg_or_mem		PROTO((rtx));
+static int jmp_uses_reg_or_mem		(rtx);
 
 /* Bit flags that specify the machine subtype we are compiling for.
    Bits are tested using macros TARGET_... defined in the tm.h file
@@ -61,7 +61,6 @@ rtx_unstable_p (x)
 
   if (code == REG)
     return ! (REGNO (x) == FRAME_POINTER_REGNUM
-	      || REGNO (x) == HARD_FRAME_POINTER_REGNUM
 	      || REGNO (x) == ARG_POINTER_REGNUM
 	      || RTX_UNCHANGING_P (x));
 
@@ -104,8 +103,8 @@ rtx_varies_p (x)
 	 and arg pointers and not just the register number in case we have
 	 eliminated the frame and/or arg pointer and are using it
 	 for pseudos.  */
-      return ! (x == frame_pointer_rtx || x == hard_frame_pointer_rtx
-		|| x == arg_pointer_rtx || x == pic_offset_table_rtx);
+      return ! (x == frame_pointer_rtx
+		|| x == arg_pointer_rtx);
 
     case LO_SUM:
       /* The operand 0 of a LO_SUM is considered constant
@@ -144,7 +143,7 @@ rtx_addr_can_trap_p (x)
 
     case REG:
       /* As in rtx_varies_p, we have to use the actual rtx, not reg number.  */
-      return ! (x == frame_pointer_rtx || x == hard_frame_pointer_rtx
+      return ! (x == frame_pointer_rtx
 		|| x == stack_pointer_rtx || x == arg_pointer_rtx);
 
     case CONST:
@@ -817,9 +816,7 @@ refers_to_regno_p (regno, endregno, x, loc)
 	 clobber a virtual register.  In fact, we could be more precise,
 	 but it isn't worth it.  */
       if ((i == STACK_POINTER_REGNUM
-#if FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM
 	   || i == ARG_POINTER_REGNUM
-#endif
 	   || i == FRAME_POINTER_REGNUM)
 	  && regno >= FIRST_VIRTUAL_REGISTER && regno <= LAST_VIRTUAL_REGISTER)
 	return 1;
@@ -961,7 +958,7 @@ reg_overlap_mentioned_p (x, in)
   endregno = regno + (regno < FIRST_PSEUDO_REGISTER
 		      ? HARD_REGNO_NREGS (regno, GET_MODE (x)) : 1);
 
-  return refers_to_regno_p (regno, endregno, in, NULL_PTR);
+  return refers_to_regno_p (regno, endregno, in, NULL);
 }
 
 /* Used for communications between the next few functions.  */

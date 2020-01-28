@@ -123,11 +123,11 @@ static HARD_REG_SET *after_insn_hard_regs;
 #define MARK_LIVE_AFTER(INSN,REGNO)  \
   SET_HARD_REG_BIT (after_insn_hard_regs[INSN_SUID (INSN)], (REGNO))
 
-static int stupid_reg_compare	PROTO((const GENERIC_PTR,const GENERIC_PTR));
-static int stupid_find_reg	PROTO((int, enum reg_class, enum machine_mode,
-				       int, int, int));
-static void stupid_mark_refs	PROTO((rtx, struct insn_chain *));
-static void find_clobbered_regs	PROTO((rtx, rtx));
+static int stupid_reg_compare	(const void *,const void *);
+static int stupid_find_reg	(int, enum reg_class, enum machine_mode,
+				       int, int, int);
+static void stupid_mark_refs	(rtx, struct insn_chain *);
+static void find_clobbered_regs	(rtx, rtx);
 
 /* For communication between stupid_life_analysis and find_clobbered_regs.  */
 static struct insn_chain *current_chain;
@@ -184,7 +184,7 @@ stupid_life_analysis (f, nregs, file)
 
   current_function_has_computed_jump = 0;
 
-  bzero (regs_ever_live, sizeof regs_ever_live);
+  zero_memory (regs_ever_live, sizeof regs_ever_live);
 
   regs_live = (char *) xmalloc (nregs);
 
@@ -220,25 +220,25 @@ stupid_life_analysis (f, nregs, file)
   /* Allocate tables to record info about regs.  */
 
   reg_where_dead = (int *) xmalloc (nregs * sizeof (int));
-  bzero ((char *) reg_where_dead, nregs * sizeof (int));
+  zero_memory ((char *) reg_where_dead, nregs * sizeof (int));
 
   reg_where_born_exact = (int *) xmalloc (nregs * sizeof (int));
-  bzero ((char *) reg_where_born_exact, nregs * sizeof (int));
+  zero_memory ((char *) reg_where_born_exact, nregs * sizeof (int));
 
   reg_where_born_clobber = (int *) xmalloc (nregs * sizeof (int));
-  bzero ((char *) reg_where_born_clobber, nregs * sizeof (int));
+  zero_memory ((char *) reg_where_born_clobber, nregs * sizeof (int));
 
   reg_where_dead_chain = (struct insn_chain **) xmalloc (nregs * sizeof (struct insn_chain *));
-  bzero ((char *) reg_where_dead_chain, nregs * sizeof (struct insn_chain *));
+  zero_memory ((char *) reg_where_dead_chain, nregs * sizeof (struct insn_chain *));
  
   reg_order = (int *) xmalloc (nregs * sizeof (int));
-  bzero ((char *) reg_order, nregs * sizeof (int));
+  zero_memory ((char *) reg_order, nregs * sizeof (int));
 
   regs_change_size = (char *) xmalloc (nregs * sizeof (char));
-  bzero ((char *) regs_change_size, nregs * sizeof (char));
+  zero_memory ((char *) regs_change_size, nregs * sizeof (char));
 
   regs_crosses_setjmp = (char *) xmalloc (nregs * sizeof (char));
-  bzero ((char *) regs_crosses_setjmp, nregs * sizeof (char));
+  zero_memory ((char *) regs_crosses_setjmp, nregs * sizeof (char));
 
   /* Allocate the reg_renumber array */
   allocate_reg_info (max_regno, FALSE, TRUE);
@@ -248,7 +248,7 @@ stupid_life_analysis (f, nregs, file)
   after_insn_hard_regs
     = (HARD_REG_SET *) xmalloc (max_suid * sizeof (HARD_REG_SET));
 
-  bzero ((char *) after_insn_hard_regs, max_suid * sizeof (HARD_REG_SET));
+  zero_memory ((char *) after_insn_hard_regs, max_suid * sizeof (HARD_REG_SET));
 
   /* Allocate and zero out many data structures
      that will record the data from lifetime analysis.  */
@@ -258,7 +258,7 @@ stupid_life_analysis (f, nregs, file)
   for (i = 0; i < max_regno; i++)
     REG_N_DEATHS (i) = 1;
 
-  bzero (regs_live, nregs);
+  zero_memory (regs_live, nregs);
 
   /* Find where each pseudo register is born and dies,
      by scanning all insns from the end to the start
@@ -455,8 +455,8 @@ stupid_life_analysis (f, nregs, file)
 
 static int
 stupid_reg_compare (r1p, r2p)
-     const GENERIC_PTR r1p;
-     const GENERIC_PTR r2p;
+     const void * r1p;
+     const void * r2p;
 {
   register int r1 = *(int *)r1p, r2 = *(int *)r2p;
   register int len1 = reg_where_dead[r1] - REG_WHERE_BORN (r1);
@@ -500,13 +500,8 @@ stupid_find_reg (call_preserved, class, mode,
      int changes_size ATTRIBUTE_UNUSED;
 {
   register int i, ins;
-#ifdef HARD_REG_SET
-  register		/* Declare them register if they are scalars.  */
-#endif
     HARD_REG_SET used, this_reg;
-#ifdef ELIMINABLE_REGS
   static struct {int from, to; } eliminables[] = ELIMINABLE_REGS;
-#endif
 
   /* If this register's life is more than 5,000 insns, we probably
      can't allocate it, so don't waste the time trying.  This avoids
@@ -518,24 +513,12 @@ stupid_find_reg (call_preserved, class, mode,
   COPY_HARD_REG_SET (used,
 		     call_preserved ? call_used_reg_set : fixed_reg_set);
 
-#ifdef ELIMINABLE_REGS
   for (i = 0; i < (int)(sizeof eliminables / sizeof eliminables[0]); i++)
     SET_HARD_REG_BIT (used, eliminables[i].from);
-#if HARD_FRAME_POINTER_REGNUM != FRAME_POINTER_REGNUM
-  SET_HARD_REG_BIT (used, HARD_FRAME_POINTER_REGNUM);
-#endif
-#else
-  SET_HARD_REG_BIT (used, FRAME_POINTER_REGNUM);
-#endif
 
   for (ins = born_insn; ins < dead_insn; ins++)
     IOR_HARD_REG_SET (used, after_insn_hard_regs[ins]);
 
-#ifdef STACK_REGS
-  if (current_function_has_computed_jump)
-    for (i = FIRST_STACK_REG; i <= LAST_STACK_REG; i++)
-      SET_HARD_REG_BIT (used, i);
-#endif
   
   IOR_COMPL_HARD_REG_SET (used, reg_class_contents[(int) class]);
 
@@ -547,11 +530,7 @@ stupid_find_reg (call_preserved, class, mode,
 
   for (i = 0; i < FIRST_PSEUDO_REGISTER; i++)
     {
-#ifdef REG_ALLOC_ORDER
-      int regno = reg_alloc_order[i];
-#else
       int regno = i;
-#endif
 
       /* If a register has screwy overlap problems,
 	 don't use it at all if not optimizing.
@@ -579,9 +558,7 @@ stupid_find_reg (call_preserved, class, mode,
 		}
 	      return regno;
 	    }
-#ifndef REG_ALLOC_ORDER
 	  i += j;		/* Skip starting points we know will lose */
-#endif
 	}
     }
 

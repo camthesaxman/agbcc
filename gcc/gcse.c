@@ -507,113 +507,113 @@ static sbitmap *rd_kill, *rd_gen, *reaching_defs, *rd_out;
 static sbitmap *ae_kill, *ae_gen, *ae_in, *ae_out;
 
 
-static void compute_can_copy	  PROTO ((void));
+static void compute_can_copy	  (void);
 
-static char *gmalloc		  PROTO ((unsigned int));
-static char *grealloc		 PROTO ((char *, unsigned int));
-static char *gcse_alloc	       PROTO ((unsigned long));
-static void alloc_gcse_mem	    PROTO ((rtx));
-static void free_gcse_mem	     PROTO ((void));
-static void alloc_reg_set_mem	 PROTO ((int));
-static void free_reg_set_mem	  PROTO ((void));
-static void record_one_set	    PROTO ((int, rtx));
-static void record_set_info	   PROTO ((rtx, rtx));
-static void compute_sets	      PROTO ((rtx));
+static char *gmalloc		  (unsigned int);
+static char *grealloc		 (char *, unsigned int);
+static char *gcse_alloc	       (unsigned long);
+static void alloc_gcse_mem	    (rtx);
+static void free_gcse_mem	     (void);
+static void alloc_reg_set_mem	 (int);
+static void free_reg_set_mem	  (void);
+static void record_one_set	    (int, rtx);
+static void record_set_info	   (rtx, rtx);
+static void compute_sets	      (rtx);
 
-static void hash_scan_insn	    PROTO ((rtx, int, int));
-static void hash_scan_set	     PROTO ((rtx, rtx, int));
-static void hash_scan_clobber	 PROTO ((rtx, rtx));
-static void hash_scan_call	    PROTO ((rtx, rtx));
-static int want_to_gcse_p	     PROTO ((rtx));
-static int oprs_unchanged_p	   PROTO ((rtx, rtx, int));
-static int oprs_anticipatable_p       PROTO ((rtx, rtx));
-static int oprs_available_p	   PROTO ((rtx, rtx));
-static void insert_expr_in_table      PROTO ((rtx, enum machine_mode,
-					      rtx, int, int));
-static void insert_set_in_table       PROTO ((rtx, rtx));
-static unsigned int hash_expr	 PROTO ((rtx, enum machine_mode,
-					      int *, int));
-static unsigned int hash_expr_1       PROTO ((rtx, enum machine_mode, int *));
-static unsigned int hash_set	  PROTO ((int, int));
-static int expr_equiv_p	       PROTO ((rtx, rtx));
-static void record_last_reg_set_info  PROTO ((rtx, int));
-static void record_last_mem_set_info  PROTO ((rtx));
-static void record_last_set_info      PROTO ((rtx, rtx));
-static void compute_hash_table	PROTO ((int));
-static void alloc_set_hash_table      PROTO ((int));
-static void free_set_hash_table       PROTO ((void));
-static void compute_set_hash_table    PROTO ((void));
-static void alloc_expr_hash_table     PROTO ((int));
-static void free_expr_hash_table      PROTO ((void));
-static void compute_expr_hash_table   PROTO ((void));
-static void dump_hash_table	   PROTO ((FILE *, char *, struct expr **,
-					      int, int));
-static struct expr *lookup_set	PROTO ((int, rtx));
-static struct expr *next_set	  PROTO ((int, struct expr *));
-static void reset_opr_set_tables      PROTO ((void));
-static int oprs_not_set_p	     PROTO ((rtx, rtx));
-static void mark_call		 PROTO ((rtx));
-static void mark_set		  PROTO ((rtx, rtx));
-static void mark_clobber	      PROTO ((rtx, rtx));
-static void mark_oprs_set	     PROTO ((rtx));
+static void hash_scan_insn	    (rtx, int, int);
+static void hash_scan_set	     (rtx, rtx, int);
+static void hash_scan_clobber	 (rtx, rtx);
+static void hash_scan_call	    (rtx, rtx);
+static int want_to_gcse_p	     (rtx);
+static int oprs_unchanged_p	   (rtx, rtx, int);
+static int oprs_anticipatable_p       (rtx, rtx);
+static int oprs_available_p	   (rtx, rtx);
+static void insert_expr_in_table      (rtx, enum machine_mode,
+					      rtx, int, int);
+static void insert_set_in_table       (rtx, rtx);
+static unsigned int hash_expr	 (rtx, enum machine_mode,
+					      int *, int);
+static unsigned int hash_expr_1       (rtx, enum machine_mode, int *);
+static unsigned int hash_set	  (int, int);
+static int expr_equiv_p	       (rtx, rtx);
+static void record_last_reg_set_info  (rtx, int);
+static void record_last_mem_set_info  (rtx);
+static void record_last_set_info      (rtx, rtx);
+static void compute_hash_table	(int);
+static void alloc_set_hash_table      (int);
+static void free_set_hash_table       (void);
+static void compute_set_hash_table    (void);
+static void alloc_expr_hash_table     (int);
+static void free_expr_hash_table      (void);
+static void compute_expr_hash_table   (void);
+static void dump_hash_table	   (FILE *, char *, struct expr **,
+					      int, int);
+static struct expr *lookup_set	(int, rtx);
+static struct expr *next_set	  (int, struct expr *);
+static void reset_opr_set_tables      (void);
+static int oprs_not_set_p	     (rtx, rtx);
+static void mark_call		 (rtx);
+static void mark_set		  (rtx, rtx);
+static void mark_clobber	      (rtx, rtx);
+static void mark_oprs_set	     (rtx);
 
-static void alloc_cprop_mem	   PROTO ((int, int));
-static void free_cprop_mem	    PROTO ((void));
-static void compute_transp	    PROTO ((rtx, int, sbitmap *, int));
-static void compute_transpout	    PROTO ((void));
-static void compute_local_properties  PROTO ((sbitmap *, sbitmap *,
-					      sbitmap *, int));
-static void compute_cprop_avinout     PROTO ((void));
-static void compute_cprop_data	PROTO ((void));
-static void find_used_regs	    PROTO ((rtx));
-static int try_replace_reg	    PROTO ((rtx, rtx, rtx));
-static struct expr *find_avail_set    PROTO ((int, rtx));
-static int cprop_insn		 PROTO ((rtx, int));
-static int cprop		      PROTO ((int));
-static int one_cprop_pass	     PROTO ((int, int));
+static void alloc_cprop_mem	   (int, int);
+static void free_cprop_mem	    (void);
+static void compute_transp	    (rtx, int, sbitmap *, int);
+static void compute_transpout	    (void);
+static void compute_local_properties  (sbitmap *, sbitmap *,
+					      sbitmap *, int);
+static void compute_cprop_avinout     (void);
+static void compute_cprop_data	(void);
+static void find_used_regs	    (rtx);
+static int try_replace_reg	    (rtx, rtx, rtx);
+static struct expr *find_avail_set    (int, rtx);
+static int cprop_insn		 (rtx, int);
+static int cprop		      (int);
+static int one_cprop_pass	     (int, int);
 
-static void alloc_pre_mem	     PROTO ((int, int));
-static void free_pre_mem	      PROTO ((void));
-static void compute_pre_data	  PROTO ((void));
-static int pre_expr_reaches_here_p    PROTO ((int, struct expr *,
-					      int, int, char *));
-static void insert_insn_end_bb	PROTO ((struct expr *, int, int));
-static void pre_insert		PROTO ((struct expr **));
-static void pre_insert_copy_insn      PROTO ((struct expr *, rtx));
-static void pre_insert_copies	 PROTO ((void));
-static int pre_delete		 PROTO ((void));
-static int pre_gcse		   PROTO ((void));
-static int one_pre_gcse_pass	  PROTO ((int));
+static void alloc_pre_mem	     (int, int);
+static void free_pre_mem	      (void);
+static void compute_pre_data	  (void);
+static int pre_expr_reaches_here_p    (int, struct expr *,
+					      int, int, char *);
+static void insert_insn_end_bb	(struct expr *, int, int);
+static void pre_insert		(struct expr **);
+static void pre_insert_copy_insn      (struct expr *, rtx);
+static void pre_insert_copies	 (void);
+static int pre_delete		 (void);
+static int pre_gcse		   (void);
+static int one_pre_gcse_pass	  (int);
 
-static void alloc_code_hoist_mem      PROTO ((int, int));
-static void free_code_hoist_mem	      PROTO ((void));
-static void compute_code_hoist_vbeinout PROTO ((void));
-static void compute_code_hoist_data   PROTO ((void));
-static int hoist_expr_reaches_here_p  PROTO ((int, int, int, char *));
-static void hoist_code		      PROTO ((void));
-static int one_code_hoisting_pass     PROTO ((void));
-static void alloc_rd_mem	      PROTO ((int, int));
-static void free_rd_mem		      PROTO ((void));
-static void handle_rd_kill_set	      PROTO ((rtx, int, int));
-static void compute_kill_rd	      PROTO ((void));
-static void compute_rd		      PROTO ((void));
-static void alloc_avail_expr_mem      PROTO ((int, int));
-static void free_avail_expr_mem	      PROTO ((void));
-static void compute_ae_gen	      PROTO ((void));
-static int expr_killed_p	      PROTO ((rtx, int));
-static void compute_ae_kill	      PROTO ((void));
-static void compute_available	      PROTO ((void));
-static int expr_reaches_here_p	      PROTO ((struct occr *, struct expr *,
-					      int, int, char *));
-static rtx computing_insn	      PROTO ((struct expr *, rtx));
-static int def_reaches_here_p	      PROTO ((rtx, rtx));
-static int can_disregard_other_sets   PROTO ((struct reg_set**, rtx, int));
-static int handle_avail_expr	      PROTO ((rtx, struct expr *));
-static int classic_gcse 	      PROTO ((void));
-static int one_classic_gcse_pass      PROTO ((int));
+static void alloc_code_hoist_mem      (int, int);
+static void free_code_hoist_mem	      (void);
+static void compute_code_hoist_vbeinout (void);
+static void compute_code_hoist_data   (void);
+static int hoist_expr_reaches_here_p  (int, int, int, char *);
+static void hoist_code		      (void);
+static int one_code_hoisting_pass     (void);
+static void alloc_rd_mem	      (int, int);
+static void free_rd_mem		      (void);
+static void handle_rd_kill_set	      (rtx, int, int);
+static void compute_kill_rd	      (void);
+static void compute_rd		      (void);
+static void alloc_avail_expr_mem      (int, int);
+static void free_avail_expr_mem	      (void);
+static void compute_ae_gen	      (void);
+static int expr_killed_p	      (rtx, int);
+static void compute_ae_kill	      (void);
+static void compute_available	      (void);
+static int expr_reaches_here_p	      (struct occr *, struct expr *,
+					      int, int, char *);
+static rtx computing_insn	      (struct expr *, rtx);
+static int def_reaches_here_p	      (rtx, rtx);
+static int can_disregard_other_sets   (struct reg_set**, rtx, int);
+static int handle_avail_expr	      (rtx, struct expr *);
+static int classic_gcse 	      (void);
+static int one_classic_gcse_pass      (int);
 
-static void mems_conflict_for_gcse_p  PROTO ((rtx, rtx));
-static int load_killed_in_block_p     PROTO ((int, int, rtx, int));
+static void mems_conflict_for_gcse_p  (rtx, rtx);
+static int load_killed_in_block_p     (int, int, rtx, int);
 
 
 /* Entry point for global common subexpression elimination.
@@ -803,7 +803,7 @@ gcse_main (f, file)
     }
 
   /* Free our obstack.  */
-  obstack_free (&gcse_obstack, NULL_PTR);
+  obstack_free (&gcse_obstack, NULL);
   /* Free reg_set_table.  */
   free_reg_set_mem ();
   /* Free storage used to record predecessor/successor data.  */
@@ -829,7 +829,7 @@ compute_can_copy ()
   rtx reg,insn;
   char *free_point = (char *) oballoc (1);
 
-  bzero (can_copy_p, NUM_MACHINE_MODES);
+  zero_memory (can_copy_p, NUM_MACHINE_MODES);
 
   start_sequence ();
   for (i = 0; i < NUM_MACHINE_MODES; i++)
@@ -842,7 +842,7 @@ compute_can_copy ()
 #else
 	  reg = gen_rtx (REG, (enum machine_mode) i, LAST_VIRTUAL_REGISTER + 1);
 	  insn = emit_insn (gen_rtx (SET, VOIDmode, reg, reg));
-	  if (recog (PATTERN (insn), insn, NULL_PTR) >= 0)
+	  if (recog (PATTERN (insn), insn, NULL) >= 0)
 	    can_copy_p[i] = 1;
 #endif
 	  break;
@@ -909,7 +909,7 @@ alloc_gcse_mem (f)
   max_uid = get_max_uid ();
   n = (max_uid + 1) * sizeof (int);
   uid_cuid = (int *) gmalloc (n);
-  bzero ((char *) uid_cuid, n);
+  zero_memory ((char *) uid_cuid, n);
   for (insn = f, i = 0; insn; insn = NEXT_INSN (insn))
     {
       if (GET_RTX_CLASS (GET_CODE (insn)) == 'i')
@@ -923,7 +923,7 @@ alloc_gcse_mem (f)
   max_cuid = i;
   n = (max_cuid + 1) * sizeof (rtx);
   cuid_insn = (rtx *) gmalloc (n);
-  bzero ((char *) cuid_insn, n);
+  zero_memory ((char *) cuid_insn, n);
   for (insn = f, i = 0; insn; insn = NEXT_INSN (insn))
     {
       if (GET_RTX_CLASS (GET_CODE (insn)) == 'i')
@@ -1085,7 +1085,7 @@ alloc_reg_set_mem (n_regs)
   reg_set_table_size = n_regs + REG_SET_TABLE_SLOP;
   n = reg_set_table_size * sizeof (struct reg_set *);
   reg_set_table = (struct reg_set **) gmalloc (n);
-  bzero ((char *) reg_set_table, n);
+  zero_memory ((char *) reg_set_table, n);
 
   gcc_obstack_init (&reg_set_obstack);
 }
@@ -1094,7 +1094,7 @@ static void
 free_reg_set_mem ()
 {
   free (reg_set_table);
-  obstack_free (&reg_set_obstack, NULL_PTR);
+  obstack_free (&reg_set_obstack, NULL);
 }
 
 /* Record REGNO in the reg_set table.  */
@@ -1114,7 +1114,7 @@ record_one_set (regno, insn)
       reg_set_table = (struct reg_set **)
 	grealloc ((char *) reg_set_table,
 		  new_size * sizeof (struct reg_set *));
-      bzero ((char *) (reg_set_table + reg_set_table_size),
+      zero_memory ((char *) (reg_set_table + reg_set_table_size),
 	     (new_size - reg_set_table_size) * sizeof (struct reg_set *));
       reg_set_table_size = new_size;
     }
@@ -1471,7 +1471,7 @@ hash_expr_1 (x, mode, do_not_record_p)
 
     case CONST_INT:
       {
-	unsigned HOST_WIDE_INT tem = INTVAL (x);
+	HOST_WIDE_UINT tem = INTVAL (x);
 	hash += ((unsigned) CONST_INT << 7) + (unsigned) mode + tem;
 	return hash;
       }
@@ -2078,7 +2078,7 @@ dump_hash_table (file, name, table, table_size, total_size)
   struct expr **flat_table = (struct expr **) alloca (total_size * sizeof (struct expr *));
   unsigned int *hash_val = (unsigned int *) alloca (total_size * sizeof (unsigned int));
 
-  bzero ((char *) flat_table, total_size * sizeof (struct expr *));
+  zero_memory ((char *) flat_table, total_size * sizeof (struct expr *));
   for (i = 0; i < table_size; i++)
     {
       struct expr *expr;
@@ -2188,7 +2188,7 @@ compute_hash_table (set_p)
      ??? This isn't needed during const/copy propagation, but it's cheap to
      compute.  Later.  */
   sbitmap_vector_zero (reg_set_in_block, n_basic_blocks);
-  bzero ((rtx *) modify_mem_list, n_basic_blocks * sizeof (rtx *));
+  zero_memory ((rtx *) modify_mem_list, n_basic_blocks * sizeof (rtx *));
 
   /* Some working arrays used to track first and last set in each block.  */
   /* ??? One could use alloca here, but at some size a threshold is crossed
@@ -2215,15 +2215,6 @@ compute_hash_table (set_p)
 	   insn && insn != NEXT_INSN (BLOCK_END (bb));
 	   insn = NEXT_INSN (insn))
 	{
-#ifdef NON_SAVING_SETJMP 
-	  if (NON_SAVING_SETJMP && GET_CODE (insn) == NOTE
-	      && NOTE_LINE_NUMBER (insn) == NOTE_INSN_SETJMP)
-	    {
-	      for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++)
-		record_last_reg_set_info (insn, regno);
-	      continue;
-	    }
-#endif
 
 	  if (GET_RTX_CLASS (GET_CODE (insn)) != 'i')
 	    continue;
@@ -2233,16 +2224,7 @@ compute_hash_table (set_p)
 	      for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++)
 		if ((call_used_regs[regno]
 		     && regno != STACK_POINTER_REGNUM
-#if HARD_FRAME_POINTER_REGNUM != FRAME_POINTER_REGNUM
-		     && regno != HARD_FRAME_POINTER_REGNUM
-#endif
-#if ARG_POINTER_REGNUM != FRAME_POINTER_REGNUM
 		     && ! (regno == ARG_POINTER_REGNUM && fixed_regs[regno])
-#endif
-#if defined (PIC_OFFSET_TABLE_REGNUM) && !defined (PIC_OFFSET_TABLE_REG_CALL_CLOBBERED)
-		     && ! (regno == PIC_OFFSET_TABLE_REGNUM && flag_pic)
-#endif
-
 		     && regno != FRAME_POINTER_REGNUM)
 		    || global_regs[regno])
 		  record_last_reg_set_info (insn, regno);
@@ -2313,7 +2295,7 @@ compute_set_hash_table ()
 {
   /* Initialize count of number of entries in hash table.  */
   n_sets = 0;
-  bzero ((char *) set_hash_table, set_hash_table_size * sizeof (struct expr *));
+  zero_memory ((char *) set_hash_table, set_hash_table_size * sizeof (struct expr *));
 
   compute_hash_table (1);
 }
@@ -2355,7 +2337,7 @@ compute_expr_hash_table ()
 {
   /* Initialize count of number of entries in hash table.  */
   n_exprs = 0;
-  bzero ((char *) expr_hash_table, expr_hash_table_size * sizeof (struct expr *));
+  zero_memory ((char *) expr_hash_table, expr_hash_table_size * sizeof (struct expr *));
 
   compute_hash_table (0);
 }
@@ -2439,7 +2421,7 @@ reset_opr_set_tables ()
   /* Also keep a record of the last instruction to modify memory.
      For now this is very trivial, we only record whether any memory
      location has been modified.  */
-  bzero ((char *)modify_mem_list, n_basic_blocks * sizeof (rtx *));
+  zero_memory ((char *)modify_mem_list, n_basic_blocks * sizeof (rtx *));
 }
 
 /* Return non-zero if the operands of X are not set before INSN in
@@ -2690,16 +2672,8 @@ compute_kill_rd ()
                     {
 		      if ((call_used_regs[regno]
 			   && regno != STACK_POINTER_REGNUM
-#if HARD_FRAME_POINTER_REGNUM != FRAME_POINTER_REGNUM
-			   && regno != HARD_FRAME_POINTER_REGNUM
-#endif
-#if ARG_POINTER_REGNUM != FRAME_POINTER_REGNUM
 			   && ! (regno == ARG_POINTER_REGNUM
 				 && fixed_regs[regno])
-#endif
-#if defined (PIC_OFFSET_TABLE_REGNUM) && !defined (PIC_OFFSET_TABLE_REG_CALL_CLOBBERED)
-			   && ! (regno == PIC_OFFSET_TABLE_REGNUM && flag_pic)
-#endif
 			   && regno != FRAME_POINTER_REGNUM)
 			  || global_regs[regno])
 			handle_rd_kill_set (insn, regno, bb);
@@ -3002,7 +2976,7 @@ expr_reaches_here_p (occr, expr, bb, check_self_loop, visited)
   if (visited == NULL)
     {
       visited = (char *) alloca (n_basic_blocks);
-      bzero (visited, n_basic_blocks);
+      zero_memory (visited, n_basic_blocks);
     }
 
   for (pred = s_preds[bb]; pred != NULL; pred = pred->next)
@@ -4183,7 +4157,7 @@ pre_expr_reaches_here_p (occr_bb, expr, bb, check_pre_comp, visited)
   if (visited == NULL)
     {
       visited = (char *) alloca (n_basic_blocks);
-      bzero (visited, n_basic_blocks);
+      zero_memory (visited, n_basic_blocks);
     }
 
   for (pred = s_preds[bb]; pred != NULL; pred = pred->next)
@@ -4636,7 +4610,7 @@ pre_gcse ()
      hash table entry.  */
 
   index_map = (struct expr **) alloca (n_exprs * sizeof (struct expr *));
-  bzero ((char *) index_map, n_exprs * sizeof (struct expr *));
+  zero_memory ((char *) index_map, n_exprs * sizeof (struct expr *));
   for (i = 0; i < expr_hash_table_size; i++)
     {
       struct expr *expr;
@@ -4887,7 +4861,7 @@ hoist_expr_reaches_here_p (expr_bb, expr_index, bb, visited)
   if (visited == NULL)
     {
       visited = (char *) alloca (n_basic_blocks);
-      bzero (visited, n_basic_blocks);
+      zero_memory (visited, n_basic_blocks);
     }
 
   visited[expr_bb] = 1;
@@ -4930,7 +4904,7 @@ hoist_code ()
      hash table entry.  */
 
   index_map = (struct expr **) alloca (n_exprs * sizeof (struct expr *));
-  bzero ((char *) index_map, n_exprs * sizeof (struct expr *));
+  zero_memory ((char *) index_map, n_exprs * sizeof (struct expr *));
   for (i = 0; i < expr_hash_table_size; i++)
     {
       struct expr *expr;
@@ -5168,9 +5142,8 @@ invalidate_nonnull_info (x, setter)
    This could probably be integrated with global cprop with a little work.  */
 
 void
-delete_null_pointer_checks (f, pass)
+delete_null_pointer_checks (f)
      rtx f;
-     int pass;
 {
   int_list_ptr *s_preds, *s_succs;
   int *num_preds, *num_succs;

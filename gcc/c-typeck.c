@@ -42,37 +42,37 @@ Boston, MA 02111-1307, USA.  */
    message within this initializer.  */
 static int missing_braces_mentioned;
 
-static tree qualify_type		PROTO((tree, tree));
-static int comp_target_types		PROTO((tree, tree));
-static int function_types_compatible_p	PROTO((tree, tree));
-static int type_lists_compatible_p	PROTO((tree, tree));
-static int self_promoting_type_p	PROTO((tree));
-static tree decl_constant_value		PROTO((tree));
-static tree lookup_field		PROTO((tree, tree, tree *));
-static tree convert_arguments		PROTO((tree, tree, tree, tree));
-static tree pointer_int_sum		PROTO((enum tree_code, tree, tree));
-static tree pointer_diff		PROTO((tree, tree));
-static tree unary_complex_lvalue	PROTO((enum tree_code, tree));
-static void pedantic_lvalue_warning	PROTO((enum tree_code));
-static tree internal_build_compound_expr PROTO((tree, int));
-static tree convert_for_assignment	PROTO((tree, tree, char *, tree,
-					       tree, int));
-static void warn_for_assignment		PROTO((char *, char *, tree, int));
-static tree valid_compound_expr_initializer PROTO((tree, tree));
-static void push_string			PROTO((char *));
-static void push_member_name		PROTO((tree));
-static void push_array_bounds		PROTO((int));
-static int spelling_length		PROTO((void));
-static char *print_spelling		PROTO((char *));
-static char *get_spelling		PROTO((char *));
-static void warning_init		PROTO((char *, char *,
-					       char *));
-static tree digest_init			PROTO((tree, tree, int, int));
-static void check_init_type_bitfields	PROTO((tree));
-static void output_init_element		PROTO((tree, tree, tree, int));
-static void output_pending_init_elements PROTO((int));
-static void add_pending_init		PROTO((tree, tree));
-static int pending_init_member		PROTO((tree));
+static tree qualify_type		(tree, tree);
+static int comp_target_types		(tree, tree);
+static int function_types_compatible_p	(tree, tree);
+static int type_lists_compatible_p	(tree, tree);
+static int self_promoting_type_p	(tree);
+static tree decl_constant_value		(tree);
+static tree lookup_field		(tree, tree, tree *);
+static tree convert_arguments		(tree, tree, tree, tree);
+static tree pointer_int_sum		(enum tree_code, tree, tree);
+static tree pointer_diff		(tree, tree);
+static tree unary_complex_lvalue	(enum tree_code, tree);
+static void pedantic_lvalue_warning	(enum tree_code);
+static tree internal_build_compound_expr (tree, int);
+static tree convert_for_assignment	(tree, tree, char *, tree,
+					       tree, int);
+static void warn_for_assignment		(char *, char *, tree, int);
+static tree valid_compound_expr_initializer (tree, tree);
+static void push_string			(char *);
+static void push_member_name		(tree);
+static void push_array_bounds		(int);
+static int spelling_length		(void);
+static char *print_spelling		(char *);
+static char *get_spelling		(char *);
+static void warning_init		(char *, char *,
+					       char *);
+static tree digest_init			(tree, tree, int, int);
+static void check_init_type_bitfields	(tree);
+static void output_init_element		(tree, tree, tree, int);
+static void output_pending_init_elements (int);
+static void add_pending_init		(tree, tree);
+static int pending_init_member		(tree);
 
 /* Do `exp = require_complete_type (exp);' to make sure exp
    does not have an incomplete type.  (That includes void types.)  */
@@ -508,11 +508,6 @@ comptypes (type1, type2)
         break;
       }
 
-    case RECORD_TYPE:
-      if (maybe_objc_comptypes (t1, t2, 0) == 1)
-	val = 1;
-      break;
-
     default:
       break;
     }
@@ -527,10 +522,6 @@ comp_target_types (ttl, ttr)
      tree ttl, ttr;
 {
   int val;
-
-  /* Give maybe_objc_comptypes a crack at letting these types through.  */
-  if ((val = maybe_objc_comptypes (ttl, ttr, 1)) >= 0)
-    return val;
 
   val = comptypes (TYPE_MAIN_VARIANT (TREE_TYPE (ttl)),
 		   TYPE_MAIN_VARIANT (TREE_TYPE (ttr)));
@@ -1569,11 +1560,6 @@ build_function_call (function, params)
   coerced_params
     = convert_arguments (TYPE_ARG_TYPES (fntype), params, name, fundecl);
 
-  /* Check for errors in format strings.  */
-
-  if (warn_format && (name || assembler_name))
-    check_function_format (name, assembler_name, coerced_params);
-
   /* Recognize certain built-in functions so we can make tree-codes
      other than CALL_EXPR.  We do this when it enables fold-const.c
      to do something useful.  */
@@ -2142,7 +2128,7 @@ build_binary_op (code, orig_op0, orig_op1, convert_p)
 		  if (TREE_INT_CST_LOW (op1) | TREE_INT_CST_HIGH (op1))
 		    short_shift = 1;
 		  if (TREE_INT_CST_HIGH (op1) != 0
-		      || ((unsigned HOST_WIDE_INT) TREE_INT_CST_LOW (op1)
+		      || ((HOST_WIDE_UINT) TREE_INT_CST_LOW (op1)
 			  >= TYPE_PRECISION (type0)))
 		    warning ("right shift count >= width of type");
 		}
@@ -2170,7 +2156,7 @@ build_binary_op (code, orig_op0, orig_op1, convert_p)
 	      if (tree_int_cst_sgn (op1) < 0)
 		warning ("left shift count is negative");
 	      else if (TREE_INT_CST_HIGH (op1) != 0
-		       || ((unsigned HOST_WIDE_INT) TREE_INT_CST_LOW (op1)
+		       || ((HOST_WIDE_UINT) TREE_INT_CST_LOW (op1)
 			   >= TYPE_PRECISION (type0)))
 		warning ("left shift count >= width of type");
 	    }
@@ -2198,7 +2184,7 @@ build_binary_op (code, orig_op0, orig_op1, convert_p)
 	      if (tree_int_cst_sgn (op1) < 0)
 		warning ("shift count is negative");
 	      else if (TREE_INT_CST_HIGH (op1) != 0
-		       || ((unsigned HOST_WIDE_INT) TREE_INT_CST_LOW (op1)
+		       || ((HOST_WIDE_UINT) TREE_INT_CST_LOW (op1)
 			   >= TYPE_PRECISION (type0)))
 		warning ("shift count >= width of type");
 	    }
@@ -2570,7 +2556,7 @@ build_binary_op (code, orig_op0, orig_op1, convert_p)
 		      || TREE_CODE (primop1) == INTEGER_CST)
 		    {
 		      tree primop;
-		      long constant, mask;
+		      HOST_WIDE_INT constant, mask;
 		      int unsignedp, bits;
 
 		      if (TREE_CODE (primop0) == INTEGER_CST)
@@ -2588,9 +2574,9 @@ build_binary_op (code, orig_op0, orig_op1, convert_p)
 
 		      bits = TYPE_PRECISION (TREE_TYPE (primop));
 		      if (bits < TYPE_PRECISION (result_type)
-			  && bits < HOST_BITS_PER_LONG && unsignedp)
+			  && bits < HOST_BITS_PER_WIDE_INT && unsignedp)
 			{
-			  mask = (~0L) << bits;
+			  mask = (~((HOST_WIDE_INT)0)) << bits;
 			  if ((mask & constant) != mask)
 			    warning ("comparison of promoted ~unsigned with constant");
 			}
@@ -4062,9 +4048,6 @@ convert_for_assignment (type, rhs, errtype, fundecl, funname, parmnum)
   if (TYPE_MAIN_VARIANT (type) == TYPE_MAIN_VARIANT (rhstype))
     {
       overflow_warning (rhs);
-      /* Check for Objective-C protocols.  This will issue a warning if
-	 there are protocol violations.  No need to use the return value.  */
-      maybe_objc_comptypes (type, rhstype, 0);
       return rhs;
     }
 
@@ -4266,14 +4249,8 @@ convert_for_assignment (type, rhs, errtype, fundecl, funname, parmnum)
     {
       if (funname)
  	{
- 	  tree selector = maybe_building_objc_message_expr ();
- 
- 	  if (selector && parmnum > 2)
- 	    error ("incompatible type for argument %d of `%s'",
-		   parmnum - 2, IDENTIFIER_POINTER (selector));
- 	  else
-	    error ("incompatible type for argument %d of `%s'",
-		   parmnum, IDENTIFIER_POINTER (funname));
+ 	  error ("incompatible type for argument %d of `%s'",
+		     parmnum, IDENTIFIER_POINTER (funname));
 	}
       else
 	error ("incompatible type for argument %d of indirect function call",
@@ -4288,8 +4265,7 @@ convert_for_assignment (type, rhs, errtype, fundecl, funname, parmnum)
 /* Print a warning using MSG.
    It gets OPNAME as its one parameter.
    If OPNAME is null, it is replaced by "passing arg ARGNUM of `FUNCTION'".
-   FUNCTION and ARGNUM are handled specially if we are building an
-   Objective-C selector.  */
+*/
 
 static void
 warn_for_assignment (msg, opname, function, argnum)
@@ -4303,13 +4279,6 @@ warn_for_assignment (msg, opname, function, argnum)
 
   if (opname == 0)
     {
-      tree selector = maybe_building_objc_message_expr ();
-      
-      if (selector && argnum > 2)
-	{
-	  function = selector;
-	  argnum -= 2;
-	}
       if (function)
 	{
 	  /* Function name is known; supply it.  */
@@ -6554,7 +6523,7 @@ process_init_element (value)
   if (constructor_stack->replacement_value != 0)
     {
       error_init ("excess elements in struct initializer%s",
-		  " after `%s'", NULL_PTR);
+		  " after `%s'", NULL);
       return;
     }
 
@@ -6590,7 +6559,7 @@ process_init_element (value)
 	  if (constructor_fields == 0)
 	    {
 	      pedwarn_init ("excess elements in struct initializer%s",
-			    " after `%s'", NULL_PTR);
+			    " after `%s'", NULL);
 	      break;
 	    }
 
@@ -6655,7 +6624,7 @@ process_init_element (value)
 	  if (constructor_fields == 0)
 	    {
 	      pedwarn_init ("excess elements in union initializer%s",
-			    " after `%s'", NULL_PTR);
+			    " after `%s'", NULL);
 	      break;
 	    }
 
@@ -6730,7 +6699,7 @@ process_init_element (value)
 	      && tree_int_cst_lt (constructor_max_index, constructor_index))
 	    {
 	      pedwarn_init ("excess elements in array initializer%s",
-			    " after `%s'", NULL_PTR);
+			    " after `%s'", NULL);
 	      break;
 	    }
 
@@ -6742,7 +6711,7 @@ process_init_element (value)
 				      constructor_range_end))
 		{
 		  pedwarn_init ("excess elements in array initializer%s",
-				" after `%s'", NULL_PTR);
+				" after `%s'", NULL);
 		  TREE_INT_CST_HIGH (constructor_range_end)
 		    = TREE_INT_CST_HIGH (constructor_max_index);
 		  TREE_INT_CST_LOW (constructor_range_end)
@@ -6794,7 +6763,7 @@ process_init_element (value)
       if (constructor_fields == 0)
 	{
 	  pedwarn_init ("excess elements in scalar initializer%s",
-			" after `%s'", NULL_PTR);
+			" after `%s'", NULL);
 	  break;
 	}
 

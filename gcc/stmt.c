@@ -425,31 +425,31 @@ struct label_chain
 static int using_eh_for_cleanups_p = 0;
 
 
-static int n_occurrences		PROTO((int, char *));
-static void expand_goto_internal	PROTO((tree, rtx, rtx));
-static int expand_fixup			PROTO((tree, rtx, rtx));
-static void expand_nl_handler_label	PROTO((rtx, rtx));
-static void expand_nl_goto_receiver	PROTO((void));
-static void expand_nl_goto_receivers	PROTO((struct nesting *));
-static void fixup_gotos			PROTO((struct nesting *, rtx, tree,
-					       rtx, int));
-static void expand_null_return_1	PROTO((rtx, int));
-static void expand_value_return		PROTO((rtx));
-static int tail_recursion_args		PROTO((tree, tree));
-static void expand_cleanups		PROTO((tree, tree, int, int));
-static void check_seenlabel		PROTO((void));
-static void do_jump_if_equal		PROTO((rtx, rtx, rtx, int));
-static int estimate_case_costs		PROTO((case_node_ptr));
-static void group_case_nodes		PROTO((case_node_ptr));
-static void balance_case_nodes		PROTO((case_node_ptr *,
-					       case_node_ptr));
-static int node_has_low_bound		PROTO((case_node_ptr, tree));
-static int node_has_high_bound		PROTO((case_node_ptr, tree));
-static int node_is_bounded		PROTO((case_node_ptr, tree));
-static void emit_jump_if_reachable	PROTO((rtx));
-static void emit_case_nodes		PROTO((rtx, case_node_ptr, rtx, tree));
-static int add_case_node		PROTO((tree, tree, tree, tree *));
-static struct case_node *case_tree2list	PROTO((case_node *, case_node *));
+static int n_occurrences		(int, char *);
+static void expand_goto_internal	(tree, rtx, rtx);
+static int expand_fixup			(tree, rtx, rtx);
+static void expand_nl_handler_label	(rtx, rtx);
+static void expand_nl_goto_receiver	(void);
+static void expand_nl_goto_receivers	(struct nesting *);
+static void fixup_gotos			(struct nesting *, rtx, tree,
+					       rtx, int);
+static void expand_null_return_1	(rtx, int);
+static void expand_value_return		(rtx);
+static int tail_recursion_args		(tree, tree);
+static void expand_cleanups		(tree, tree, int, int);
+static void check_seenlabel		(void);
+static void do_jump_if_equal		(rtx, rtx, rtx, int);
+static int estimate_case_costs		(case_node_ptr);
+static void group_case_nodes		(case_node_ptr);
+static void balance_case_nodes		(case_node_ptr *,
+					       case_node_ptr);
+static int node_has_low_bound		(case_node_ptr, tree);
+static int node_has_high_bound		(case_node_ptr, tree);
+static int node_is_bounded		(case_node_ptr, tree);
+static void emit_jump_if_reachable	(rtx);
+static void emit_case_nodes		(rtx, case_node_ptr, rtx, tree);
+static int add_case_node		(tree, tree, tree, tree *);
+static struct case_node *case_tree2list	(case_node *, case_node *);
 
 void
 using_eh_for_cleanups ()
@@ -699,7 +699,7 @@ expand_goto (label)
 	     to the location of the function's incoming static chain info.
 	     The non-local goto handler will then adjust it to contain the
 	     proper value and reload the argument pointer, if needed.  */
-	  emit_move_insn (hard_frame_pointer_rtx, lookup_static_chain (label));
+	  emit_move_insn (frame_pointer_rtx, lookup_static_chain (label));
 
 	  /* We have now loaded the frame pointer hardware register with
 	     the address of that corresponds to the start of the virtual
@@ -710,20 +710,20 @@ expand_goto (label)
 	     which will do any cleanups and then jump to the label.  */
 	  addr = copy_rtx (handler_slot);
 	  temp = copy_to_reg (replace_rtx (addr, virtual_stack_vars_rtx,
-					   hard_frame_pointer_rtx));
+					   frame_pointer_rtx));
 	  
 	  /* Restore the stack pointer.  Note this uses fp just restored.  */
 	  addr = p->nonlocal_goto_stack_level;
 	  if (addr)
 	    addr = replace_rtx (copy_rtx (addr),
 				virtual_stack_vars_rtx,
-				hard_frame_pointer_rtx);
+				frame_pointer_rtx);
 
 	  emit_stack_restore (SAVE_NONLOCAL, addr, NULL_RTX);
 
-	  /* USE of hard_frame_pointer_rtx added for consistency; not clear if
+	  /* USE of frame_pointer_rtx added for consistency; not clear if
 	     really needed.  */
-	  emit_insn (gen_rtx_USE (VOIDmode, hard_frame_pointer_rtx));
+	  emit_insn (gen_rtx_USE (VOIDmode, frame_pointer_rtx));
 	  emit_insn (gen_rtx_USE (VOIDmode, stack_pointer_rtx));
 	  emit_indirect_jump (temp);
 	}
@@ -777,7 +777,6 @@ expand_goto_internal (body, label, last_insn)
 	  /* Ensure stack adjust isn't done by emit_jump, as this
 	     would clobber the stack pointer.  This one should be
 	     deleted as dead by flow.  */
-	  clear_pending_stack_adjust ();
 	  do_pending_stack_adjust ();
 	  emit_stack_restore (SAVE_BLOCK, stack_level, NULL_RTX);
 	}
@@ -909,9 +908,9 @@ expand_fixup (tree_label, rtl_label, last_insn)
 
         start_sequence ();
         pushlevel (0);
-        start = emit_note (NULL_PTR, NOTE_INSN_BLOCK_BEG);
-	fixup->before_jump = emit_note (NULL_PTR, NOTE_INSN_DELETED);
-        last_block_end_note = emit_note (NULL_PTR, NOTE_INSN_BLOCK_END);
+        start = emit_note (NULL, NOTE_INSN_BLOCK_BEG);
+	fixup->before_jump = emit_note (NULL, NOTE_INSN_DELETED);
+        last_block_end_note = emit_note (NULL, NOTE_INSN_BLOCK_END);
         fixup->context = poplevel (1, 0, 0);  /* Create the BLOCK node now! */
         end_sequence ();
         emit_insns_after (start, original_before_jump);
@@ -941,7 +940,7 @@ void
 expand_fixups (first_insn)
      rtx first_insn;
 {
-  fixup_gotos (NULL_PTR, NULL_RTX, NULL_TREE, first_insn, 0);
+  fixup_gotos (NULL, NULL_RTX, NULL_TREE, first_insn, 0);
 }
 
 /* When exiting a binding contour, process all pending gotos requiring fixups.
@@ -1183,8 +1182,6 @@ expand_asm_operands (string, outputs, inputs, clobbers, vol, filename, line)
   int *inout_opnum = (int *) alloca (noutputs * sizeof (int));
   enum machine_mode *inout_mode
     = (enum machine_mode *) alloca (noutputs * sizeof (enum machine_mode));
-  /* The insn we have emitted.  */
-  rtx insn;
 
   /* An ASM with no outputs needs to be treated as volatile, for now.  */
   if (noutputs == 0)
@@ -1283,7 +1280,7 @@ expand_asm_operands (string, outputs, inputs, clobbers, vol, filename, line)
       if (p != constraint)
 	{
 	  j = *p;
-	  bcopy (constraint, constraint+1, p-constraint);
+	  copy_memory (constraint, constraint+1, p-constraint);
 	  *constraint = j;
 
 	  warning ("output constraint `%c' for operand %d is not at the beginning", j, i);
@@ -1535,12 +1532,12 @@ expand_asm_operands (string, outputs, inputs, clobbers, vol, filename, line)
   if (noutputs == 1 && nclobbers == 0)
     {
       XSTR (body, 1) = TREE_STRING_POINTER (TREE_PURPOSE (outputs));
-      insn = emit_insn (gen_rtx_SET (VOIDmode, output_rtx[0], body));
+      emit_insn (gen_rtx_SET (VOIDmode, output_rtx[0], body));
     }
   else if (noutputs == 0 && nclobbers == 0)
     {
       /* No output operands: put in a raw ASM_OPERANDS rtx.  */
-      insn = emit_insn (body);
+      emit_insn (body);
     }
   else
     {
@@ -1600,7 +1597,7 @@ expand_asm_operands (string, outputs, inputs, clobbers, vol, filename, line)
 	    = gen_rtx_CLOBBER (VOIDmode, gen_rtx_REG (QImode, j));
 	}
 
-      insn = emit_insn (body);
+      emit_insn (body);
     }
 
   free_temp_slots ();
@@ -1974,7 +1971,7 @@ expand_start_loop (exit_flag)
 
   do_pending_stack_adjust ();
   emit_queue ();
-  emit_note (NULL_PTR, NOTE_INSN_LOOP_BEG);
+  emit_note (NULL, NOTE_INSN_LOOP_BEG);
   emit_label (thisloop->data.loop.start_label);
 
   return thisloop;
@@ -2001,7 +1998,7 @@ void
 expand_loop_continue_here ()
 {
   do_pending_stack_adjust ();
-  emit_note (NULL_PTR, NOTE_INSN_LOOP_CONT);
+  emit_note (NULL, NOTE_INSN_LOOP_CONT);
   emit_label (loop_stack->data.loop.continue_label);
 }
 
@@ -2235,7 +2232,7 @@ expand_end_loop ()
     }
 
   emit_jump (start_label);
-  emit_note (NULL_PTR, NOTE_INSN_LOOP_END);
+  emit_note (NULL, NOTE_INSN_LOOP_END);
   emit_label (loop_stack->data.loop.end_label);
 
   POPSTACK (loop_stack);
@@ -2459,7 +2456,6 @@ expand_null_return_1 (last_insn, use_goto)
 {
   rtx end_label = cleanup_label ? cleanup_label : return_label;
 
-  clear_pending_stack_adjust ();
   do_pending_stack_adjust ();
   last_expr_type = 0;
 
@@ -2471,17 +2467,6 @@ expand_null_return_1 (last_insn, use_goto)
       expand_goto_internal (NULL_TREE, end_label, last_insn);
       return;
     }
-
-  /* Otherwise output a simple return-insn if one is available,
-     unless it won't do the job.  */
-#ifdef HAVE_return
-  if (HAVE_return && use_goto == 0 && cleanup_label == 0)
-    {
-      emit_jump_insn (gen_return ());
-      emit_barrier ();
-      return;
-    }
-#endif
 
   /* Otherwise jump to the epilogue.  */
   expand_goto_internal (NULL_TREE, end_label, last_insn);
@@ -2504,7 +2489,6 @@ expand_return (retval)
      computation of the return value.  */
   rtx last_insn = 0;
   register rtx val = 0;
-  register rtx op0;
   tree retval_rhs;
   int cleanups;
 
@@ -2578,70 +2562,6 @@ expand_return (retval)
   if (optimize_tail_recursion (retval_rhs, last_insn))
     return;
 
-#ifdef HAVE_return
-  /* This optimization is safe if there are local cleanups
-     because expand_null_return takes care of them.
-     ??? I think it should also be safe when there is a cleanup label,
-     because expand_null_return takes care of them, too.
-     Any reason why not?  */
-  if (HAVE_return && cleanup_label == 0
-      && ! current_function_returns_pcc_struct
-      && BRANCH_COST <= 1)
-    {
-      /* If this is  return x == y;  then generate
-	 if (x == y) return 1; else return 0;
-	 if we can do it with explicit return insns and branches are cheap,
-	 but not if we have the corresponding scc insn.  */
-      int has_scc = 0;
-      if (retval_rhs)
-	switch (TREE_CODE (retval_rhs))
-	  {
-	  case EQ_EXPR:
-#ifdef HAVE_seq
-	    has_scc = HAVE_seq;
-#endif
-	  case NE_EXPR:
-#ifdef HAVE_sne
-	    has_scc = HAVE_sne;
-#endif
-	  case GT_EXPR:
-#ifdef HAVE_sgt
-	    has_scc = HAVE_sgt;
-#endif
-	  case GE_EXPR:
-#ifdef HAVE_sge
-	    has_scc = HAVE_sge;
-#endif
-	  case LT_EXPR:
-#ifdef HAVE_slt
-	    has_scc = HAVE_slt;
-#endif
-	  case LE_EXPR:
-#ifdef HAVE_sle
-	    has_scc = HAVE_sle;
-#endif
-	  case TRUTH_ANDIF_EXPR:
-	  case TRUTH_ORIF_EXPR:
-	  case TRUTH_AND_EXPR:
-	  case TRUTH_OR_EXPR:
-	  case TRUTH_NOT_EXPR:
-	  case TRUTH_XOR_EXPR:
-	    if (! has_scc)
-	      {
-		op0 = gen_label_rtx ();
-		jumpifnot (retval_rhs, op0);
-		expand_value_return (const1_rtx);
-		emit_label (op0);
-		expand_value_return (const0_rtx);
-		return;
-	      }
-	    break;
-
-	  default:
-	    break;
-	  }
-    }
-#endif /* HAVE_return */
 
   /* If the result is an aggregate that is being returned in one (or more)
      registers, load the registers here.  The compiler currently can't handle
@@ -2665,14 +2585,6 @@ expand_return (retval)
       rtx result_reg, src = NULL_RTX, dst = NULL_RTX;
       rtx result_val = expand_expr (retval_rhs, NULL_RTX, VOIDmode, 0);
       enum machine_mode tmpmode, result_reg_mode;
-
-      /* Structures whose size is not a multiple of a word are aligned
-	 to the least significant byte (to the right).  On a BYTES_BIG_ENDIAN
-	 machine, this means we must skip the empty high order bytes when
-	 calculating the bit offset.  */
-      if (BYTES_BIG_ENDIAN && bytes % UNITS_PER_WORD)
-	big_endian_correction = (BITS_PER_WORD - ((bytes % UNITS_PER_WORD)
-						  * BITS_PER_UNIT));
 
       /* Copy the structure BITSIZE bits at a time.  */ 
       for (bitpos = 0, xbitpos = big_endian_correction;
@@ -2905,7 +2817,7 @@ expand_start_bindings (exit_flag)
      int exit_flag;
 {
   struct nesting *thisblock = ALLOC_NESTING ();
-  rtx note = emit_note (NULL_PTR, NOTE_INSN_BLOCK_BEG);
+  rtx note = emit_note (NULL, NOTE_INSN_BLOCK_BEG);
 
   /* Make an entry on block_stack for the block we are entering.  */
 
@@ -3080,12 +2992,10 @@ expand_nl_goto_receiver ()
        the original assignment true.
        So the following insn will actually be
        decrementing fp by STARTING_FRAME_OFFSET.  */
-    emit_move_insn (virtual_stack_vars_rtx, hard_frame_pointer_rtx);
+    emit_move_insn (virtual_stack_vars_rtx, frame_pointer_rtx);
 
-#if ARG_POINTER_REGNUM != HARD_FRAME_POINTER_REGNUM
   if (fixed_regs[ARG_POINTER_REGNUM])
     {
-#ifdef ELIMINABLE_REGS
       /* If the argument pointer can be eliminated in favor of the
 	 frame pointer, we don't need to restore it.  We assume here
 	 that if such an elimination is present, it can always be used.
@@ -3096,11 +3006,10 @@ expand_nl_goto_receiver ()
 
       for (i = 0; i < sizeof elim_regs / sizeof elim_regs[0]; i++)
 	if (elim_regs[i].from == ARG_POINTER_REGNUM
-	    && elim_regs[i].to == HARD_FRAME_POINTER_REGNUM)
+	    && elim_regs[i].to == FRAME_POINTER_REGNUM)
 	  break;
 
       if (i == sizeof elim_regs / sizeof elim_regs [0])
-#endif
 	{
 	  /* Now restore our arg pointer from the address at which it
 	     was saved in our stack frame.
@@ -3115,7 +3024,6 @@ expand_nl_goto_receiver ()
 			  copy_to_reg (arg_pointer_save_area));
 	}
     }
-#endif
 
 #ifdef HAVE_nonlocal_goto_receiver
   if (HAVE_nonlocal_goto_receiver)
@@ -3329,7 +3237,7 @@ expand_end_bindings (vars, mark_ends, dont_jump_in)
      just going out of scope, so they are in scope for their cleanups.  */
 
   if (mark_ends)
-    last_block_end_note = emit_note (NULL_PTR, NOTE_INSN_BLOCK_END);
+    last_block_end_note = emit_note (NULL, NOTE_INSN_BLOCK_END);
   else
     /* Get rid of the beginning-mark if we don't make an end-mark.  */
     NOTE_LINE_NUMBER (thisblock->data.block.first_insn) = NOTE_INSN_DELETED;
@@ -4065,7 +3973,7 @@ expand_start_case (exit_flag, expr, type, printname)
   /* Make sure case_stmt.start points to something that won't
      need any transformation before expand_end_case.  */
   if (GET_CODE (get_last_insn ()) != NOTE)
-    emit_note (NULL_PTR, NOTE_INSN_DELETED);
+    emit_note (NULL, NOTE_INSN_DELETED);
 
   thiscase->data.case_stmt.start = get_last_insn ();
 
@@ -4174,7 +4082,7 @@ check_seenlabel ()
 int
 pushcase (value, converter, label, duplicate)
      register tree value;
-     tree (*converter) PROTO((tree, tree));
+     tree (*converter) (tree, tree);
      register tree label;
      tree *duplicate;
 {
@@ -4236,7 +4144,7 @@ pushcase (value, converter, label, duplicate)
 int
 pushcase_range (value1, value2, converter, label, duplicate)
      register tree value1, value2;
-     tree (*converter) PROTO((tree, tree));
+     tree (*converter) (tree, tree);
      register tree label;
      tree *duplicate;
 {
@@ -4784,7 +4692,7 @@ check_for_full_enumeration_handling (type)
     {
       long i;
       tree v = TYPE_VALUES (type);
-      bzero (cases_seen, bytes_needed);
+      zero_memory (cases_seen, bytes_needed);
 
       /* The time complexity of this code is normally O(N), where
 	 N being the number of members in the enumerated type.
@@ -5017,11 +4925,8 @@ expand_end_case (orig_index)
 
       else if (TREE_INT_CST_HIGH (range) != 0
 	       || count < (unsigned int) CASE_VALUES_THRESHOLD
-	       || ((unsigned HOST_WIDE_INT) (TREE_INT_CST_LOW (range))
+	       || ((HOST_WIDE_UINT) (TREE_INT_CST_LOW (range))
 		   > 10 * count)
-#ifndef ASM_OUTPUT_ADDR_DIFF_ELT
-	       || flag_pic
-#endif
 	       || TREE_CODE (index_expr) == INTEGER_CST
 	       /* These will reduce to a constant.  */
 	       || (TREE_CODE (index_expr) == CALL_EXPR
@@ -5107,7 +5012,7 @@ expand_end_case (orig_index)
 		= (TREE_CODE (TREE_TYPE (orig_index)) != ENUMERAL_TYPE
 		   && estimate_case_costs (thiscase->data.case_stmt.case_list));
 	      balance_case_nodes (&thiscase->data.case_stmt.case_list, 
-				  NULL_PTR);
+				  NULL);
 	      emit_case_nodes (index, thiscase->data.case_stmt.case_list,
 			       default_label, index_type);
 	      emit_jump_if_reachable (default_label);
@@ -5205,7 +5110,7 @@ expand_end_case (orig_index)
 
 	  ncases = TREE_INT_CST_LOW (range) + 1;
 	  labelvec = (rtx *) alloca (ncases * sizeof (rtx));
-	  bzero ((char *) labelvec, ncases * sizeof (rtx));
+	  zero_memory ((char *) labelvec, ncases * sizeof (rtx));
 
 	  for (n = thiscase->data.case_stmt.case_list; n; n = n->right)
 	    {
@@ -5231,7 +5136,7 @@ expand_end_case (orig_index)
 	  /* Output the table */
 	  emit_label (table_label);
 
-	  if (CASE_VECTOR_PC_RELATIVE || flag_pic)
+	  if (CASE_VECTOR_PC_RELATIVE)
 	    emit_jump_insn (gen_rtx_ADDR_DIFF_VEC (CASE_VECTOR_MODE,
 						   gen_rtx_LABEL_REF (Pmode, table_label),
 						   gen_rtvec_v (ncases, labelvec),
@@ -5349,7 +5254,7 @@ estimate_case_costs (node)
   if (cost_table == NULL)
     {
       cost_table = ((short *) xmalloc (129 * sizeof (short))) + 1;
-      bzero ((char *) (cost_table - 1), 129 * sizeof (short));
+      zero_memory ((char *) (cost_table - 1), 129 * sizeof (short));
 
       for (i = 0; i < 128; i++)
 	{

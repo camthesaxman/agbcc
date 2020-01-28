@@ -43,11 +43,11 @@ static int bitmap_obstack_init = FALSE;
 bitmap_element bitmap_zero;		/* An element of all zero bits. */
 bitmap_element *bitmap_free;		/* Freelist of bitmap elements. */
 
-static void bitmap_element_free		PROTO((bitmap, bitmap_element *));
-static bitmap_element *bitmap_element_allocate PROTO((void));
-static int bitmap_element_zerop		PROTO((bitmap_element *));
-static void bitmap_element_link		PROTO((bitmap, bitmap_element *));
-static bitmap_element *bitmap_find_bit	PROTO((bitmap, unsigned int));
+static void bitmap_element_free		(bitmap, bitmap_element *);
+static bitmap_element *bitmap_element_allocate (void);
+static int bitmap_element_zerop		(bitmap_element *);
+static void bitmap_element_link		(bitmap, bitmap_element *);
+static bitmap_element *bitmap_find_bit	(bitmap, unsigned int);
 
 /* Free a bitmap element */
 
@@ -290,7 +290,7 @@ bitmap_find_bit (head, bit)
      unsigned int bit;
 {
   bitmap_element *element;
-  unsigned HOST_WIDE_INT indx = bit / BITMAP_ELEMENT_ALL_BITS;
+  HOST_WIDE_UINT indx = bit / BITMAP_ELEMENT_ALL_BITS;
 
   if (head->current == 0)
     return 0;
@@ -331,7 +331,7 @@ bitmap_clear_bit (head, bit)
       unsigned bit_num  = bit % (unsigned) HOST_BITS_PER_WIDE_INT;
       unsigned word_num = ((bit / (unsigned) HOST_BITS_PER_WIDE_INT)
 			   % BITMAP_ELEMENT_WORDS);
-      ptr->bits[word_num] &= ~ (((unsigned HOST_WIDE_INT) 1) << bit_num);
+      ptr->bits[word_num] &= ~ (((HOST_WIDE_UINT) 1) << bit_num);
 
       /* If we cleared the entire word, free up the element */
       if (bitmap_element_zerop (ptr))
@@ -351,7 +351,7 @@ bitmap_set_bit (head, bit)
   unsigned word_num
     = ((bit / (unsigned) HOST_BITS_PER_WIDE_INT) % BITMAP_ELEMENT_WORDS);
   unsigned bit_num  = bit % (unsigned) HOST_BITS_PER_WIDE_INT;
-  unsigned HOST_WIDE_INT bit_val = ((unsigned HOST_WIDE_INT) 1) << bit_num;
+  HOST_WIDE_UINT bit_val = ((HOST_WIDE_UINT) 1) << bit_num;
 
   if (ptr == 0)
     {
@@ -384,7 +384,7 @@ bitmap_bit_p (head, bit)
     = ((bit / (unsigned) HOST_BITS_PER_WIDE_INT) % BITMAP_ELEMENT_WORDS);
 
   return
-    (ptr->bits[word_num] & (((unsigned HOST_WIDE_INT) 1) << bit_num)) != 0;
+    (ptr->bits[word_num] & (((HOST_WIDE_UINT) 1) << bit_num)) != 0;
 }
 
 /* Store in bitmap TO the result of combining bitmap FROM1 and
@@ -401,9 +401,9 @@ bitmap_operation (to, from1, from2, operation)
   bitmap_element *from1_ptr = from1->first;
   bitmap_element *from2_ptr = from2->first;
   unsigned int indx1
-    = (from1_ptr) ? from1_ptr->indx : ~ (unsigned HOST_WIDE_INT) 0;
+    = (from1_ptr) ? from1_ptr->indx : ~ (HOST_WIDE_UINT) 0;
   unsigned int indx2
-    = (from2_ptr) ? from2_ptr->indx : ~ (unsigned HOST_WIDE_INT) 0;
+    = (from2_ptr) ? from2_ptr->indx : ~ (HOST_WIDE_UINT) 0;
   bitmap_element *to_ptr = 0;
   bitmap_element *from1_tmp;
   bitmap_element *from2_tmp;
@@ -432,9 +432,9 @@ bitmap_operation (to, from1, from2, operation)
 	  from1_tmp = from1_ptr;
 	  from2_tmp = from2_ptr;
 	  from1_ptr = from1_ptr->next;
-	  indx1 = (from1_ptr) ? from1_ptr->indx : ~ (unsigned HOST_WIDE_INT) 0;
+	  indx1 = (from1_ptr) ? from1_ptr->indx : ~ (HOST_WIDE_UINT) 0;
 	  from2_ptr = from2_ptr->next;
-	  indx2 = (from2_ptr) ? from2_ptr->indx : ~ (unsigned HOST_WIDE_INT) 0;
+	  indx2 = (from2_ptr) ? from2_ptr->indx : ~ (HOST_WIDE_UINT) 0;
 	}
       else if (indx1 < indx2)
 	{
@@ -442,7 +442,7 @@ bitmap_operation (to, from1, from2, operation)
 	  from1_tmp = from1_ptr;
 	  from2_tmp = &bitmap_zero;
 	  from1_ptr = from1_ptr->next;
-	  indx1 = (from1_ptr) ? from1_ptr->indx : ~ (unsigned HOST_WIDE_INT) 0;
+	  indx1 = (from1_ptr) ? from1_ptr->indx : ~ (HOST_WIDE_UINT) 0;
 	}
       else
 	{
@@ -450,7 +450,7 @@ bitmap_operation (to, from1, from2, operation)
 	  from1_tmp = &bitmap_zero;
 	  from2_tmp = from2_ptr;
 	  from2_ptr = from2_ptr->next;
-	  indx2 = (from2_ptr) ? from2_ptr->indx : ~ (unsigned HOST_WIDE_INT) 0;
+	  indx2 = (from2_ptr) ? from2_ptr->indx : ~ (HOST_WIDE_UINT) 0;
 	}
 
       if (to_ptr == 0)
@@ -559,27 +559,17 @@ bitmap_debug_file (file, head)
 {
   bitmap_element *ptr;
 
-  fprintf (file, "\nfirst = ");
-  fprintf (file, HOST_PTR_PRINTF, head->first);
-  fprintf (file, " current = ");
-  fprintf (file, HOST_PTR_PRINTF, head->current);
-  fprintf (file, " indx = %u\n", head->indx);
+  fprintf (file, "\nfirst = %p current = %p indx = %u\n", head->first, head->current, head->indx);
 
   for (ptr = head->first; ptr; ptr = ptr->next)
     {
       int i, j, col = 26;
 
-      fprintf (file, "\t");
-      fprintf (file, HOST_PTR_PRINTF, ptr);
-      fprintf (file, " next = ");
-      fprintf (file, HOST_PTR_PRINTF, ptr->next);
-      fprintf (file, " prev = ");
-      fprintf (file, HOST_PTR_PRINTF, ptr->prev);
-      fprintf (file, " indx = %u\n\t\tbits = {", ptr->indx);
+      fprintf (file, "\t%p next = %p prev = %p indx = %u\n\t\tbits = {", ptr, ptr->next, ptr->prev, ptr->indx);
 
       for (i = 0; i < BITMAP_ELEMENT_WORDS; i++)
 	for (j = 0; j < HOST_BITS_PER_WIDE_INT; j++)
-	  if ((ptr->bits[i] & (((unsigned HOST_WIDE_INT) 1) << j)) != 0)
+	  if ((ptr->bits[i] & (((HOST_WIDE_UINT) 1) << j)) != 0)
 	    {
 	      if (col > 70)
 		{
@@ -637,6 +627,6 @@ bitmap_release_memory ()
   if (bitmap_obstack_init)
     {
       bitmap_obstack_init = FALSE;
-      obstack_free (&bitmap_obstack, NULL_PTR);
+      obstack_free (&bitmap_obstack, NULL);
     }
 }

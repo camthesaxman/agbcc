@@ -389,7 +389,6 @@ Boston, MA 02111-1307, USA.  */
 
 
 #include "config.h"
-#include "defaults.h"
 #include "eh-common.h"
 #include "system.h"
 #include "rtl.h"
@@ -514,24 +513,24 @@ static rtx last_rethrow_symbol = NULL_RTX;
 
 /* Prototypes for local functions.  */
 
-static void push_eh_entry	PROTO((struct eh_stack *));
-static struct eh_entry * pop_eh_entry		PROTO((struct eh_stack *));
-static void enqueue_eh_entry	PROTO((struct eh_queue *, struct eh_entry *));
-static struct eh_entry * dequeue_eh_entry	PROTO((struct eh_queue *));
-static rtx call_get_eh_context	PROTO((void));
-static void start_dynamic_cleanup		PROTO((tree, tree));
-static void start_dynamic_handler		PROTO((void));
-static void expand_rethrow	PROTO((rtx));
-static void output_exception_table_entry	PROTO((FILE *, int));
-static int can_throw		PROTO((rtx));
-static rtx scan_region		PROTO((rtx, int, int *));
-static void eh_regs		PROTO((rtx *, rtx *, rtx *, int));
-static void set_insn_eh_region	PROTO((rtx *, int));
+static void push_eh_entry	(struct eh_stack *);
+static struct eh_entry * pop_eh_entry		(struct eh_stack *);
+static void enqueue_eh_entry	(struct eh_queue *, struct eh_entry *);
+static struct eh_entry * dequeue_eh_entry	(struct eh_queue *);
+static rtx call_get_eh_context	(void);
+static void start_dynamic_cleanup		(tree, tree);
+static void start_dynamic_handler		(void);
+static void expand_rethrow	(rtx);
+static void output_exception_table_entry	(FILE *, int);
+static int can_throw		(rtx);
+static rtx scan_region		(rtx, int, int *);
+static void eh_regs		(rtx *, rtx *, rtx *, int);
+static void set_insn_eh_region	(rtx *, int);
 #ifdef DONT_USE_BUILTIN_SETJMP
-static void jumpif_rtx		PROTO((rtx, rtx));
+static void jumpif_rtx		(rtx, rtx);
 #endif
 
-rtx expand_builtin_return_addr	PROTO((enum built_in_function, int, rtx));
+rtx expand_builtin_return_addr	(enum built_in_function, int, rtx);
 
 /* Various support routines to manipulate the various data structures
    used by the exception handling code.  */
@@ -978,7 +977,7 @@ clear_function_eh_region ()
 int 
 duplicate_eh_handlers (old_note_eh_region, new_note_eh_region, map)
      int old_note_eh_region, new_note_eh_region;
-     rtx (*map) PARAMS ((rtx));
+     rtx (*map) (rtx);
 {
   struct handler_info *ptr, *new_ptr;
   int new_region, region;
@@ -1029,7 +1028,7 @@ eh_region_from_symbol (sym)
 rtx 
 rethrow_symbol_map (sym, map)
      rtx sym;
-     rtx (*map) PARAMS ((rtx));
+     rtx (*map) (rtx);
 {
   int x, y;
   for (x = 0; x < current_func_eh_entry; x++)
@@ -1154,7 +1153,7 @@ call_get_eh_context ()
       TREE_PUBLIC (fn) = 1;
       DECL_ARTIFICIAL (fn) = 1;
       TREE_READONLY (fn) = 1;
-      make_decl_rtl (fn, NULL_PTR, 1);
+      make_decl_rtl (fn, NULL, 1);
       assemble_external (fn);
       pop_obstacks ();
     }
@@ -1485,7 +1484,7 @@ expand_eh_region_start_for_decl (decl)
     }
 
   push_eh_entry (&ehstack);
-  note = emit_note (NULL_PTR, NOTE_INSN_EH_REGION_BEG);
+  note = emit_note (NULL, NOTE_INSN_EH_REGION_BEG);
   NOTE_BLOCK_NUMBER (note)
     = CODE_LABEL_NUMBER (ehstack.top->entry->exception_handler_label);
   if (exceptions_via_longjmp)
@@ -1524,7 +1523,7 @@ expand_eh_region_end (handler)
 
   entry = pop_eh_entry (&ehstack);
 
-  note = emit_note (NULL_PTR, NOTE_INSN_EH_REGION_END);
+  note = emit_note (NULL, NOTE_INSN_EH_REGION_END);
   ret = NOTE_BLOCK_NUMBER (note)
     = CODE_LABEL_NUMBER (entry->exception_handler_label);
   if (exceptions_via_longjmp == 0 && ! flag_new_exceptions
@@ -2807,7 +2806,7 @@ expand_eh_return ()
   /* Set the return address to the stub label.  */
 
   ra = expand_builtin_return_addr (BUILT_IN_RETURN_ADDRESS,
-				   0, hard_frame_pointer_rtx);
+				   0, frame_pointer_rtx);
   if (GET_CODE (ra) == REG && REGNO (ra) >= FIRST_PSEUDO_REGISTER)
     abort();
 

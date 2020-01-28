@@ -72,25 +72,24 @@ typedef struct alias_set_entry {
   splay_tree children;
 }* alias_set_entry;
 
-static rtx canon_rtx			PROTO((rtx));
-static int rtx_equal_for_memref_p	PROTO((rtx, rtx));
-static rtx find_symbolic_term		PROTO((rtx));
-static int memrefs_conflict_p		PROTO((int, rtx, int, rtx,
-					       HOST_WIDE_INT));
-static void record_set			PROTO((rtx, rtx));
-static rtx find_base_term		PROTO((rtx));
-static int base_alias_check		PROTO((rtx, rtx, enum machine_mode,
-					       enum machine_mode));
-static rtx find_base_value		PROTO((rtx));
-static int mems_in_disjoint_alias_sets_p PROTO((rtx, rtx));
-static int alias_set_compare            PROTO((splay_tree_key, 
-					       splay_tree_key));
-static int insert_subset_children       PROTO((splay_tree_node,
-					       void*));
-static alias_set_entry get_alias_set_entry PROTO((int));
-static rtx fixed_scalar_and_varying_struct_p PROTO((rtx, rtx, int (*)(rtx)));
-static int aliases_everything_p         PROTO((rtx));
-static int write_dependence_p           PROTO((rtx, rtx, int));
+static rtx canon_rtx			(rtx);
+static int rtx_equal_for_memref_p	(rtx, rtx);
+static int memrefs_conflict_p		(int, rtx, int, rtx,
+					       HOST_WIDE_INT);
+static void record_set			(rtx, rtx);
+static rtx find_base_term		(rtx);
+static int base_alias_check		(rtx, rtx, enum machine_mode,
+					       enum machine_mode);
+static rtx find_base_value		(rtx);
+static int mems_in_disjoint_alias_sets_p (rtx, rtx);
+static int alias_set_compare            (splay_tree_key, 
+					       splay_tree_key);
+static int insert_subset_children       (splay_tree_node,
+					       void*);
+static alias_set_entry get_alias_set_entry (int);
+static rtx fixed_scalar_and_varying_struct_p (rtx, rtx, int (*)(rtx));
+static int aliases_everything_p         (rtx);
+static int write_dependence_p           (rtx, rtx, int);
 
 /* Set up all info needed to perform alias analysis on memory references.  */
 
@@ -706,40 +705,6 @@ rtx_equal_for_memref_p (x, y)
   return 1;
 }
 
-/* Given an rtx X, find a SYMBOL_REF or LABEL_REF within
-   X and return it, or return 0 if none found.  */
-
-static rtx
-find_symbolic_term (x)
-     rtx x;
-{
-  register int i;
-  register enum rtx_code code;
-  register char *fmt;
-
-  code = GET_CODE (x);
-  if (code == SYMBOL_REF || code == LABEL_REF)
-    return x;
-  if (GET_RTX_CLASS (code) == 'o')
-    return 0;
-
-  fmt = GET_RTX_FORMAT (code);
-  for (i = GET_RTX_LENGTH (code) - 1; i >= 0; i--)
-    {
-      rtx t;
-
-      if (fmt[i] == 'e')
-	{
-	  t = find_symbolic_term (XEXP (x, i));
-	  if (t != 0)
-	    return t;
-	}
-      else if (fmt[i] == 'E')
-	break;
-    }
-  return 0;
-}
-
 static rtx
 find_base_term (x)
      register rtx x;
@@ -1150,7 +1115,7 @@ static rtx
 fixed_scalar_and_varying_struct_p (mem1, mem2, varies_p)
      rtx mem1;
      rtx mem2;
-     int (*varies_p) PROTO((rtx));
+     int (*varies_p) (rtx);
 {
   rtx mem1_addr = XEXP (mem1, 0);
   rtx mem2_addr = XEXP (mem2, 0);
@@ -1196,7 +1161,7 @@ true_dependence (mem, mem_mode, x, varies)
      rtx mem;
      enum machine_mode mem_mode;
      rtx x;
-     int (*varies) PROTO((rtx));
+     int (*varies) (rtx);
 {
   register rtx x_addr, mem_addr;
 
@@ -1348,9 +1313,9 @@ init_alias_analysis ()
     - FIRST_PSEUDO_REGISTER;
   reg_known_equiv_p =
     oballoc (maxreg - FIRST_PSEUDO_REGISTER) - FIRST_PSEUDO_REGISTER;
-  bzero ((char *) (reg_known_value + FIRST_PSEUDO_REGISTER),
+  zero_memory ((char *) (reg_known_value + FIRST_PSEUDO_REGISTER),
 	 (maxreg-FIRST_PSEUDO_REGISTER) * sizeof (rtx));
-  bzero (reg_known_equiv_p + FIRST_PSEUDO_REGISTER,
+  zero_memory (reg_known_equiv_p + FIRST_PSEUDO_REGISTER,
 	 (maxreg - FIRST_PSEUDO_REGISTER) * sizeof (char));
 
   /* Overallocate reg_base_value to allow some growth during loop
@@ -1360,12 +1325,12 @@ init_alias_analysis ()
   reg_base_value = (rtx *)oballoc (reg_base_value_size * sizeof (rtx));
   new_reg_base_value = (rtx *)alloca (reg_base_value_size * sizeof (rtx));
   reg_seen = (char *)alloca (reg_base_value_size);
-  bzero ((char *) reg_base_value, reg_base_value_size * sizeof (rtx));
+  zero_memory ((char *) reg_base_value, reg_base_value_size * sizeof (rtx));
   if (! reload_completed && flag_unroll_loops)
     {
       alias_invariant = (rtx *)xrealloc (alias_invariant,
 					 reg_base_value_size * sizeof (rtx));
-      bzero ((char *)alias_invariant, reg_base_value_size * sizeof (rtx));
+      zero_memory ((char *)alias_invariant, reg_base_value_size * sizeof (rtx));
     }
     
 
@@ -1403,10 +1368,10 @@ init_alias_analysis ()
       copying_arguments = 1;
 
       /* Wipe the potential alias information clean for this pass.  */
-      bzero ((char *) new_reg_base_value, reg_base_value_size * sizeof (rtx));
+      zero_memory ((char *) new_reg_base_value, reg_base_value_size * sizeof (rtx));
 
       /* Wipe the reg_seen array clean.  */
-      bzero ((char *) reg_seen, reg_base_value_size);
+      zero_memory ((char *) reg_seen, reg_base_value_size);
 
       /* Mark all hard registers which may contain an address.
 	 The stack, frame and argument pointers may contain an address.
@@ -1427,10 +1392,6 @@ init_alias_analysis ()
 	= gen_rtx_ADDRESS (Pmode, arg_pointer_rtx);
       new_reg_base_value[FRAME_POINTER_REGNUM]
 	= gen_rtx_ADDRESS (Pmode, frame_pointer_rtx);
-#if HARD_FRAME_POINTER_REGNUM != FRAME_POINTER_REGNUM
-      new_reg_base_value[HARD_FRAME_POINTER_REGNUM]
-	= gen_rtx_ADDRESS (Pmode, hard_frame_pointer_rtx);
-#endif
       if (struct_value_incoming_rtx
 	  && GET_CODE (struct_value_incoming_rtx) == REG)
 	new_reg_base_value[REGNO (struct_value_incoming_rtx)]

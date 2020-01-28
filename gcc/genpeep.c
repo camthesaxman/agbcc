@@ -19,7 +19,7 @@ the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
 
-#include "hconfig.h"
+#include "config.h"
 #include "system.h"
 #include "rtl.h"
 #include "obstack.h"
@@ -46,9 +46,9 @@ struct link
   int vecelt;
 };
 
-static void fatal PVPROTO ((const char *, ...))
+static void fatal (const char *, ...)
   ATTRIBUTE_PRINTF_1 ATTRIBUTE_NORETURN;
-void fancy_abort PROTO((void)) ATTRIBUTE_NORETURN;
+void fancy_abort (void) ATTRIBUTE_NORETURN;
 
 static int max_opno;
 
@@ -61,10 +61,10 @@ static int n_operands;
 
 static int insn_code_number = 0;
 
-static void gen_peephole PROTO((rtx));
-static void match_rtx PROTO((rtx, struct link *, int));
-static void print_path PROTO((struct link *));
-static void print_code PROTO((RTX_CODE));
+static void gen_peephole (rtx);
+static void match_rtx (rtx, struct link *, int);
+static void print_path (struct link *);
+static void print_code (RTX_CODE);
 
 static void
 gen_peephole (peep)
@@ -107,7 +107,7 @@ gen_peephole (peep)
       /* Walk the insn's pattern, remembering at all times the path
 	 down to the walking point.  */
 
-      match_rtx (XVECEXP (peep, 0, i), NULL_PTR, insn_code_number);
+      match_rtx (XVECEXP (peep, 0, i), NULL, insn_code_number);
     }
 
   /* We get this far if the pattern matches.
@@ -384,51 +384,45 @@ print_code (code)
     }
 }
 
-PTR
+void *
 xmalloc (size)
   size_t size;
 {
-  register PTR val = (PTR) malloc (size);
+  register void *val = malloc (size);
 
   if (val == 0)
     fatal ("virtual memory exhausted");
   return val;
 }
 
-PTR
+void *
 xrealloc (old, size)
-  PTR old;
+  void *old;
   size_t size;
 {
-  register PTR ptr;
+  register void *ptr;
   if (old)
-    ptr = (PTR) realloc (old, size);
+    ptr = realloc (old, size);
   else
-    ptr = (PTR) malloc (size);
+    ptr = malloc (size);
   if (!ptr)
     fatal ("virtual memory exhausted");
   return ptr;
 }
 
 static void
-fatal VPROTO ((const char *format, ...))
+fatal (const char *format, ...)
 {
-#ifndef ANSI_PROTOTYPES
-  const char *format;
-#endif
   va_list ap;
 
-  VA_START (ap, format);
+  va_start (ap, format);
 
-#ifndef ANSI_PROTOTYPES
-  format = va_arg (ap, const char *);
-#endif
 
   fprintf (stderr, "genpeep: ");
   vfprintf (stderr, format, ap);
   va_end (ap);
   fprintf (stderr, "\n");
-  exit (FATAL_EXIT_CODE);
+  exit (EXIT_FAILURE);
 }
 
 /* More 'friendly' abort that prints the line and file.
@@ -460,7 +454,7 @@ main (argc, argv)
   if (infile == 0)
     {
       perror (argv[1]);
-      exit (FATAL_EXIT_CODE);
+      exit (EXIT_FAILURE);
     }
 
   init_rtl ();
@@ -520,7 +514,7 @@ from the machine description file `md'.  */\n\n");
   printf ("rtx peep_operand[%d];\n", max_opno + 1);
 
   fflush (stdout);
-  exit (ferror (stdout) != 0 ? FATAL_EXIT_CODE : SUCCESS_EXIT_CODE);
+  exit (ferror (stdout) != 0 ? EXIT_FAILURE : EXIT_SUCCESS);
   /* NOTREACHED */
   return 0;
 }

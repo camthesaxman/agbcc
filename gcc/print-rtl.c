@@ -55,7 +55,7 @@ static int indent;
 
 extern char **insn_name_ptr;
 
-static void print_rtx		PROTO ((rtx));
+static void print_rtx		(rtx);
 
 /* Nonzero means suppress output of instruction numbers and line number
    notes in debugging dumps.
@@ -273,8 +273,7 @@ print_rtx (in_rtx)
 	break;
 
       case 't':
-	putc (' ', outfile);
-	fprintf (outfile, HOST_PTR_PRINTF, (char *) XTREE (in_rtx, i));
+	fprintf (outfile, " %p", (char *) XTREE (in_rtx, i));
 	break;
 
       case '*':

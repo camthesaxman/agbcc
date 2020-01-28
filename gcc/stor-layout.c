@@ -53,10 +53,10 @@ int maximum_field_alignment;
    May be overridden by front-ends.  */
 int set_alignment = 0;
 
-static enum machine_mode smallest_mode_for_size  PROTO((unsigned int,
-							enum mode_class));
-static tree layout_record	PROTO((tree));
-static void layout_union	PROTO((tree));
+static enum machine_mode smallest_mode_for_size  (unsigned int,
+							enum mode_class);
+static tree layout_record	(tree);
+static void layout_union	(tree);
 
 /* SAVE_EXPRs for sizes of types and decls, waiting to be expanded.  */
 
@@ -119,7 +119,7 @@ variable_size (size)
   if (immediate_size_expand)
     /* NULL_RTX is not defined; neither is the rtx type. 
        Also, we would like to pass const0_rtx here, but don't have it.  */
-    expand_expr (size, expand_expr (integer_zero_node, NULL_PTR, VOIDmode, 0),
+    expand_expr (size, expand_expr (integer_zero_node, NULL, VOIDmode, 0),
 		 VOIDmode, 0);
   else
     pending_sizes = tree_cons (NULL_TREE, size, pending_sizes);
@@ -185,7 +185,6 @@ int_mode_for_mode (mode)
   switch (GET_MODE_CLASS (mode))
     {
     case MODE_INT:
-    case MODE_PARTIAL_INT:
       break;
 
     case MODE_COMPLEX_INT:
@@ -1333,7 +1332,7 @@ fixup_unsigned_type (type)
     = build_int_2 (precision - HOST_BITS_PER_WIDE_INT >= 0
 		   ? -1 : ((HOST_WIDE_INT) 1 << precision) - 1,
 		   precision - HOST_BITS_PER_WIDE_INT > 0
-		   ? ((unsigned HOST_WIDE_INT) ~0
+		   ? ((HOST_WIDE_UINT) ~0
 		      >> (HOST_BITS_PER_WIDE_INT
 			  - (precision - HOST_BITS_PER_WIDE_INT)))
 		   : 0);

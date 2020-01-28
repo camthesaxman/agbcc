@@ -89,9 +89,7 @@ Boston, MA 02111-1307, USA.  */
    FIRST_PARM_OFFSET - STARTING_FRAME_OFFSET is not a constant during rtl
    generation.  See fix_lexical_addr for details.  */
 
-#if ARG_POINTER_REGNUM != FRAME_POINTER_REGNUM
 #define NEED_SEPARATE_AP
-#endif
 
 /* Number of bytes of args popped by function being compiled on its return.
    Zero if no bytes are to be popped.
@@ -162,11 +160,6 @@ int current_function_calls_alloca;
 
 int current_function_returns_pointer;
 
-/* If some insns can be deferred to the delay slots of the epilogue, the
-   delay list for them is recorded here.  */
-
-rtx current_function_epilogue_delay_list;
-
 /* If function's args have a fixed size, this is that size, in bytes.
    Otherwise, it is -1.
    May affect compilation of return insn or of function epilogue.  */
@@ -217,9 +210,6 @@ rtx current_function_return_rtx;
 /* Nonzero if the current function uses the constant pool.  */
 
 int current_function_uses_const_pool;
-
-/* Nonzero if the current function uses pic_offset_table_rtx.  */
-int current_function_uses_pic_offset_table;
 
 /* The arg pointer hard register, or the pseudo into which it was copied.  */
 rtx current_function_internal_arg_pointer;
@@ -354,8 +344,8 @@ static int virtuals_instantiated;
 /* These variables hold pointers to functions to
    save and restore machine-specific data,
    in push_function_context and pop_function_context.  */
-void (*save_machine_status) PROTO((struct function *));
-void (*restore_machine_status) PROTO((struct function *));
+void (*save_machine_status) (struct function *);
+void (*restore_machine_status) (struct function *);
 
 /* Nonzero if we need to distinguish between the return value of this function
    and the return value of a function called by this function.  This helps
@@ -443,45 +433,45 @@ struct fixup_replacement
    
 /* Forward declarations.  */
 
-static rtx assign_outer_stack_local PROTO ((enum machine_mode, HOST_WIDE_INT,
-					    int, struct function *));
-static struct temp_slot *find_temp_slot_from_address  PROTO((rtx));
-static void put_reg_into_stack	PROTO((struct function *, rtx, tree,
+static rtx assign_outer_stack_local (enum machine_mode, HOST_WIDE_INT,
+					    int, struct function *);
+static struct temp_slot *find_temp_slot_from_address  (rtx);
+static void put_reg_into_stack	(struct function *, rtx, tree,
 				       enum machine_mode, enum machine_mode,
-				       int, int, int));
-static void fixup_var_refs	PROTO((rtx, enum machine_mode, int));
+				       int, int, int);
+static void fixup_var_refs	(rtx, enum machine_mode, int);
 static struct fixup_replacement
-  *find_fixup_replacement	PROTO((struct fixup_replacement **, rtx));
-static void fixup_var_refs_insns PROTO((rtx, enum machine_mode, int,
-					rtx, int));
-static void fixup_var_refs_1	PROTO((rtx, enum machine_mode, rtx *, rtx,
-				       struct fixup_replacement **));
-static rtx fixup_memory_subreg	PROTO((rtx, rtx, int));
-static rtx walk_fixup_memory_subreg  PROTO((rtx, rtx, int));
-static rtx fixup_stack_1	PROTO((rtx, rtx));
-static void optimize_bit_field	PROTO((rtx, rtx, rtx *));
-static void instantiate_decls	PROTO((tree, int));
-static void instantiate_decls_1	PROTO((tree, int));
-static void instantiate_decl	PROTO((rtx, int, int));
-static int instantiate_virtual_regs_1 PROTO((rtx *, rtx, int));
-static void delete_handlers	PROTO((void));
-static void pad_to_arg_alignment PROTO((struct args_size *, int));
+  *find_fixup_replacement	(struct fixup_replacement **, rtx);
+static void fixup_var_refs_insns (rtx, enum machine_mode, int,
+					rtx, int);
+static void fixup_var_refs_1	(rtx, enum machine_mode, rtx *, rtx,
+				       struct fixup_replacement **);
+static rtx fixup_memory_subreg	(rtx, rtx, int);
+static rtx walk_fixup_memory_subreg  (rtx, rtx, int);
+static rtx fixup_stack_1	(rtx, rtx);
+static void optimize_bit_field	(rtx, rtx, rtx *);
+static void instantiate_decls	(tree, int);
+static void instantiate_decls_1	(tree, int);
+static void instantiate_decl	(rtx, int, int);
+static int instantiate_virtual_regs_1 (rtx *, rtx, int);
+static void delete_handlers	(void);
+static void pad_to_arg_alignment (struct args_size *, int);
 #ifndef ARGS_GROW_DOWNWARD
-static void pad_below		PROTO((struct args_size *, enum  machine_mode,
-				       tree));
+static void pad_below		(struct args_size *, enum  machine_mode,
+				       tree);
 #endif
 #ifdef ARGS_GROW_DOWNWARD
-static tree round_down		PROTO((tree, int));
+static tree round_down		(tree, int);
 #endif
-static rtx round_trampoline_addr PROTO((rtx));
-static tree blocks_nreverse	PROTO((tree));
-static int all_blocks		PROTO((tree, tree *));
+static rtx round_trampoline_addr (rtx);
+static tree blocks_nreverse	(tree);
+static int all_blocks		(tree, tree *);
 #if defined (HAVE_prologue) || defined (HAVE_epilogue)
-static int *record_insns	PROTO((rtx));
-static int contains		PROTO((rtx, int *));
+static int *record_insns	(rtx);
+static int contains		(rtx, int *);
 #endif /* HAVE_prologue || HAVE_epilogue */
-static void put_addressof_into_stack PROTO((rtx));
-static void purge_addressof_1	PROTO((rtx *, rtx, int, int));
+static void put_addressof_into_stack (rtx);
+static void purge_addressof_1	(rtx *, rtx, int, int);
 
 /* Pointer to chain of `struct function' for containing functions.  */
 struct function *outer_function_chain;
@@ -536,7 +526,6 @@ push_function_context_to (context)
   p->varargs = current_function_varargs;
   p->stdarg = current_function_stdarg;
   p->uses_const_pool = current_function_uses_const_pool;
-  p->uses_pic_offset_table = current_function_uses_pic_offset_table;
   p->internal_arg_pointer = current_function_internal_arg_pointer;
   p->cannot_inline = current_function_cannot_inline;
   p->max_parm_reg = max_parm_reg;
@@ -565,7 +554,6 @@ push_function_context_to (context)
   p->target_temp_slot_level = target_temp_slot_level;
   p->var_temp_slot_level = var_temp_slot_level;
   p->fixup_var_refs_queue = 0;
-  p->epilogue_delay_list = current_function_epilogue_delay_list;
   p->args_info = current_function_args_info;
   p->check_memory_usage = current_function_check_memory_usage;
   p->instrument_entry_exit = current_function_instrument_entry_exit;
@@ -623,7 +611,6 @@ pop_function_context_from (context)
   current_function_varargs = p->varargs;
   current_function_stdarg = p->stdarg;
   current_function_uses_const_pool = p->uses_const_pool;
-  current_function_uses_pic_offset_table = p->uses_pic_offset_table;
   current_function_internal_arg_pointer = p->internal_arg_pointer;
   current_function_cannot_inline = p->cannot_inline;
   max_parm_reg = p->max_parm_reg;
@@ -651,7 +638,6 @@ pop_function_context_from (context)
   temp_slot_level = p->temp_slot_level;
   target_temp_slot_level = p->target_temp_slot_level;
   var_temp_slot_level = p->var_temp_slot_level;
-  current_function_epilogue_delay_list = p->epilogue_delay_list;
   reg_renumber = 0;
   current_function_args_info = p->args_info;
   current_function_check_memory_usage = p->check_memory_usage;
@@ -748,11 +734,6 @@ assign_stack_local (mode, size, align)
   frame_offset = CEIL_ROUND (frame_offset, alignment);
 #endif
 
-  /* On a big-endian machine, if we are allocating more space than we will use,
-     use the least significant bytes of those that are allocated.  */
-  if (BYTES_BIG_ENDIAN && mode != BLKmode)
-    bigend_correction = size - GET_MODE_SIZE (mode);
-
 #ifdef FRAME_GROWS_DOWNWARD
   frame_offset -= size;
 #endif
@@ -818,11 +799,6 @@ assign_outer_stack_local (mode, size, align, function)
 #else
   function->frame_offset = CEIL_ROUND (function->frame_offset, alignment);
 #endif
-
-  /* On a big-endian machine, if we are allocating more space than we will use,
-     use the least significant bytes of those that are allocated.  */
-  if (BYTES_BIG_ENDIAN && mode != BLKmode)
-    bigend_correction = size - GET_MODE_SIZE (mode);
 
 #ifdef FRAME_GROWS_DOWNWARD
   function->frame_offset -= size;
@@ -2013,22 +1989,13 @@ fixup_var_refs_1 (var, promoted_mode, loc, insn, replacements)
 	      enum machine_mode is_mode = GET_MODE (tem);
 	      HOST_WIDE_INT pos = INTVAL (XEXP (x, 2));
 
-#ifdef HAVE_extzv
-	      if (GET_CODE (x) == ZERO_EXTRACT)
+          if (GET_CODE (x) == ZERO_EXTRACT)
 		{
 		  wanted_mode = insn_operand_mode[(int) CODE_FOR_extzv][1];
 		  if (wanted_mode == VOIDmode)
 		    wanted_mode = word_mode;
 		}
-#endif
-#ifdef HAVE_extv
-	      if (GET_CODE (x) == SIGN_EXTRACT)
-		{
-		  wanted_mode = insn_operand_mode[(int) CODE_FOR_extv][1];
-		  if (wanted_mode == VOIDmode)
-		    wanted_mode = word_mode;
-		}
-#endif
+
 	      /* If we have a narrower mode, we can do something.  */
 	      if (wanted_mode != VOIDmode
 		  && GET_MODE_SIZE (wanted_mode) < GET_MODE_SIZE (is_mode))
@@ -2036,12 +2003,6 @@ fixup_var_refs_1 (var, promoted_mode, loc, insn, replacements)
 		  HOST_WIDE_INT offset = pos / BITS_PER_UNIT;
 		  rtx old_pos = XEXP (x, 2);
 		  rtx newmem;
-
-		  /* If the bytes and bits are counted differently, we
-		     must adjust the offset.  */
-		  if (BYTES_BIG_ENDIAN != BITS_BIG_ENDIAN)
-		    offset = (GET_MODE_SIZE (is_mode)
-			      - GET_MODE_SIZE (wanted_mode) - offset);
 
 		  pos %= GET_MODE_BITSIZE (wanted_mode);
 
@@ -2131,7 +2092,7 @@ fixup_var_refs_1 (var, promoted_mode, loc, insn, replacements)
 	optimize_bit_field (x, insn, 0);
       if (GET_CODE (SET_SRC (x)) == SIGN_EXTRACT
 	  || GET_CODE (SET_SRC (x)) == ZERO_EXTRACT)
-	optimize_bit_field (x, insn, NULL_PTR);
+	optimize_bit_field (x, insn, NULL);
 
       /* For a paradoxical SUBREG inside a ZERO_EXTRACT, load the object
 	 into a register and then store it back out.  */
@@ -2166,9 +2127,6 @@ fixup_var_refs_1 (var, promoted_mode, loc, insn, replacements)
       {
 	rtx dest = SET_DEST (x);
 	rtx src = SET_SRC (x);
-#ifdef HAVE_insv
-	rtx outerdest = dest;
-#endif
 
 	while (GET_CODE (dest) == SUBREG || GET_CODE (dest) == STRICT_LOW_PART
 	       || GET_CODE (dest) == SIGN_EXTRACT
@@ -2187,85 +2145,6 @@ fixup_var_refs_1 (var, promoted_mode, loc, insn, replacements)
 	/* We will need to rerecognize this insn.  */
 	INSN_CODE (insn) = -1;
 
-#ifdef HAVE_insv
-	if (GET_CODE (outerdest) == ZERO_EXTRACT && dest == var)
-	  {
-	    /* Since this case will return, ensure we fixup all the
-	       operands here.  */
-	    fixup_var_refs_1 (var, promoted_mode, &XEXP (outerdest, 1),
-			      insn, replacements);
-	    fixup_var_refs_1 (var, promoted_mode, &XEXP (outerdest, 2),
-			      insn, replacements);
-	    fixup_var_refs_1 (var, promoted_mode, &SET_SRC (x),
-			      insn, replacements);
-
-	    tem = XEXP (outerdest, 0);
-
-	    /* Clean up (SUBREG:SI (MEM:mode ...) 0)
-	       that may appear inside a ZERO_EXTRACT.
-	       This was legitimate when the MEM was a REG.  */
-	    if (GET_CODE (tem) == SUBREG
-		&& SUBREG_REG (tem) == var)
-	      tem = fixup_memory_subreg (tem, insn, 0);
-	    else
-	      tem = fixup_stack_1 (tem, insn);
-
-	    if (GET_CODE (XEXP (outerdest, 1)) == CONST_INT
-		&& GET_CODE (XEXP (outerdest, 2)) == CONST_INT
-		&& ! mode_dependent_address_p (XEXP (tem, 0))
-		&& ! MEM_VOLATILE_P (tem))
-	      {
-		enum machine_mode wanted_mode;
-		enum machine_mode is_mode = GET_MODE (tem);
-		HOST_WIDE_INT pos = INTVAL (XEXP (outerdest, 2));
-
-		wanted_mode = insn_operand_mode[(int) CODE_FOR_insv][0];
-		if (wanted_mode == VOIDmode)
-		  wanted_mode = word_mode;
-
-		/* If we have a narrower mode, we can do something.  */
-		if (GET_MODE_SIZE (wanted_mode) < GET_MODE_SIZE (is_mode))
-		  {
-		    HOST_WIDE_INT offset = pos / BITS_PER_UNIT;
-		    rtx old_pos = XEXP (outerdest, 2);
-		    rtx newmem;
-
-		    if (BYTES_BIG_ENDIAN != BITS_BIG_ENDIAN)
-		      offset = (GET_MODE_SIZE (is_mode)
-				- GET_MODE_SIZE (wanted_mode) - offset);
-
-		    pos %= GET_MODE_BITSIZE (wanted_mode);
-
-		    newmem = gen_rtx_MEM (wanted_mode,
-					  plus_constant (XEXP (tem, 0), offset));
-		    RTX_UNCHANGING_P (newmem) = RTX_UNCHANGING_P (tem);
-		    MEM_COPY_ATTRIBUTES (newmem, tem);
-
-		    /* Make the change and see if the insn remains valid.  */
-		    INSN_CODE (insn) = -1;
-		    XEXP (outerdest, 0) = newmem;
-		    XEXP (outerdest, 2) = GEN_INT (pos);
-		    
-		    if (recog_memoized (insn) >= 0)
-		      return;
-		    
-		    /* Otherwise, restore old position.  XEXP (x, 0) will be
-		       restored later.  */
-		    XEXP (outerdest, 2) = old_pos;
-		  }
-	      }
-
-	    /* If we get here, the bit-field store doesn't allow memory
-	       or isn't located at a constant position.  Load the value into
-	       a register, do the store, and put it back into memory.  */
-
-	    tem1 = gen_reg_rtx (GET_MODE (tem));
-	    emit_insn_before (gen_move_insn (tem1, tem), insn);
-	    emit_insn_after (gen_move_insn (tem, tem1), insn);
-	    XEXP (outerdest, 0) = tem1;
-	    return;
-	  }
-#endif
 
 	/* STRICT_LOW_PART is a no-op on memory references
 	   and it can cause combinations to be unrecognizable,
@@ -2446,9 +2325,6 @@ fixup_memory_subreg (x, insn, uncritical)
       && ! uncritical)
     abort ();
 
-  if (BYTES_BIG_ENDIAN)
-    offset += (MIN (UNITS_PER_WORD, GET_MODE_SIZE (GET_MODE (SUBREG_REG (x))))
-	       - MIN (UNITS_PER_WORD, GET_MODE_SIZE (mode)));
   addr = plus_constant (addr, offset);
   if (!flag_force_addr && memory_address_p (mode, addr))
     /* Shortcut if no insns need be emitted.  */
@@ -2530,9 +2406,6 @@ fixup_stack_1 (x, insn)
 	  && ((REGNO (XEXP (ad, 0)) >= FIRST_VIRTUAL_REGISTER
 	       && REGNO (XEXP (ad, 0)) <= LAST_VIRTUAL_REGISTER)
 	      || REGNO (XEXP (ad, 0)) == FRAME_POINTER_REGNUM
-#if HARD_FRAME_POINTER_REGNUM != FRAME_POINTER_REGNUM
-	      || REGNO (XEXP (ad, 0)) == HARD_FRAME_POINTER_REGNUM
-#endif
 	      || REGNO (XEXP (ad, 0)) == STACK_POINTER_REGNUM
 	      || REGNO (XEXP (ad, 0)) == ARG_POINTER_REGNUM
 	      || XEXP (ad, 0) == current_function_internal_arg_pointer)
@@ -2633,21 +2506,11 @@ optimize_bit_field (body, insn, equiv_mem)
 	  HOST_WIDE_INT offset = INTVAL (XEXP (bitfield, 2));
 	  rtx insns;
 
-	  /* Adjust OFFSET to count bits from low-address byte.  */
-	  if (BITS_BIG_ENDIAN != BYTES_BIG_ENDIAN)
-	    offset = (GET_MODE_BITSIZE (GET_MODE (XEXP (bitfield, 0)))
-		      - offset - INTVAL (XEXP (bitfield, 1)));
-
 	  /* Adjust OFFSET to count bytes from low-address byte.  */
 	  offset /= BITS_PER_UNIT;
 	  if (GET_CODE (XEXP (bitfield, 0)) == SUBREG)
 	    {
 	      offset += SUBREG_WORD (XEXP (bitfield, 0)) * UNITS_PER_WORD;
-	      if (BYTES_BIG_ENDIAN)
-		offset -= (MIN (UNITS_PER_WORD,
-				GET_MODE_SIZE (GET_MODE (XEXP (bitfield, 0))))
-			   - MIN (UNITS_PER_WORD,
-				  GET_MODE_SIZE (GET_MODE (memref))));
 	    }
 
 	  start_sequence ();
@@ -3543,24 +3406,14 @@ instantiate_virtual_regs_1 (loc, object, extra_insns)
 
       temp = XEXP (x, 0);
       if (CONSTANT_ADDRESS_P (temp)
-#if FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM
 	  || temp == arg_pointer_rtx
-#endif
-#if HARD_FRAME_POINTER_REGNUM != FRAME_POINTER_REGNUM
-	  || temp == hard_frame_pointer_rtx
-#endif
 	  || temp == frame_pointer_rtx)
 	return 1;
 
       if (GET_CODE (temp) == PLUS
 	  && CONSTANT_ADDRESS_P (XEXP (temp, 1))
 	  && (XEXP (temp, 0) == frame_pointer_rtx
-#if HARD_FRAME_POINTER_REGNUM != FRAME_POINTER_REGNUM
-	      || XEXP (temp, 0) == hard_frame_pointer_rtx
-#endif
-#if FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM
 	      || XEXP (temp, 0) == arg_pointer_rtx
-#endif
 	      ))
 	return 1;
 
@@ -3946,16 +3799,12 @@ assign_parms (fndecl, second_time)
   current_function_stdarg = stdarg;
 
   /* If the reg that the virtual arg pointer will be translated into is
-     not a fixed reg or is the stack pointer, make a copy of the virtual
-     arg pointer, and address parms via the copy.  The frame pointer is
-     considered fixed even though it is not marked as such.
+     not a fixed reg, make a copy of the virtual arg pointer, and address parms
+     via the copy.
 
      The second time through, simply use ap to avoid generating rtx.  */
 
-  if ((ARG_POINTER_REGNUM == STACK_POINTER_REGNUM
-       || ! (fixed_regs[ARG_POINTER_REGNUM]
-	     || ARG_POINTER_REGNUM == FRAME_POINTER_REGNUM))
-      && ! second_time)
+  if (!fixed_regs[ARG_POINTER_REGNUM] && !second_time)
     internal_arg_pointer = copy_to_reg (virtual_incoming_args_rtx);
   else
     internal_arg_pointer = virtual_incoming_args_rtx;
@@ -3980,7 +3829,7 @@ assign_parms (fndecl, second_time)
 			       
   max_parm_reg = LAST_VIRTUAL_REGISTER + 1;
   parm_reg_stack_loc = (rtx *) savealloc (max_parm_reg * sizeof (rtx));
-  bzero ((char *) parm_reg_stack_loc, max_parm_reg * sizeof (rtx));
+  zero_memory ((char *) parm_reg_stack_loc, max_parm_reg * sizeof (rtx));
 
 #ifdef INIT_CUMULATIVE_INCOMING_ARGS
   INIT_CUMULATIVE_INCOMING_ARGS (args_so_far, fntype, NULL_RTX);
@@ -4266,49 +4115,6 @@ assign_parms (fndecl, second_time)
 	  && nominal_mode != BLKmode && nominal_mode != passed_mode)
 	stack_parm = 0;
 
-#if 0
-      /* Now adjust STACK_PARM to the mode and precise location
-	 where this parameter should live during execution,
-	 if we discover that it must live in the stack during execution.
-	 To make debuggers happier on big-endian machines, we store
-	 the value in the last bytes of the space available.  */
-
-      if (nominal_mode != BLKmode && nominal_mode != passed_mode
-	  && stack_parm != 0)
-	{
-	  rtx offset_rtx;
-
-	  if (BYTES_BIG_ENDIAN
-	      && GET_MODE_SIZE (nominal_mode) < UNITS_PER_WORD)
-	    stack_offset.constant += (GET_MODE_SIZE (passed_mode)
-				      - GET_MODE_SIZE (nominal_mode));
-
-	  offset_rtx = ARGS_SIZE_RTX (stack_offset);
-	  if (offset_rtx == const0_rtx)
-	    stack_parm = gen_rtx_MEM (nominal_mode, internal_arg_pointer);
-	  else
-	    stack_parm = gen_rtx_MEM (nominal_mode,
-				      gen_rtx_PLUS (Pmode,
-						    internal_arg_pointer,
-						    offset_rtx));
-
-	  /* If this is a memory ref that contains aggregate components,
-	     mark it as such for cse and loop optimize.  */
-	  MEM_SET_IN_STRUCT_P (stack_parm, aggregate);
-	}
-#endif /* 0 */
-
-#ifdef STACK_REGS
-      /* We need this "use" info, because the gcc-register->stack-register
-	 converter in reg-stack.c needs to know which registers are active
-	 at the start of the function call.  The actual parameter loading
-	 instructions are not always available then anymore, since they might
-	 have been optimised away.  */
-
-      if (GET_CODE (entry_parm) == REG && !(hide_last_arg && last_named))
-	  emit_insn (gen_rtx_USE (GET_MODE (entry_parm), entry_parm));
-#endif
-
       /* ENTRY_PARM is an RTX for the parameter as it arrives,
 	 in the mode in which it arrives.
 	 STACK_PARM is an RTX for a stack slot where the parameter can live
@@ -4558,9 +4364,9 @@ assign_parms (fndecl, second_time)
 		 precisely correct.  */
 	      max_parm_reg = regno + 1;
 	      new = (rtx *) savealloc (max_parm_reg * sizeof (rtx));
-	      bcopy ((char *) parm_reg_stack_loc, (char *) new,
+	      copy_memory ((char *) parm_reg_stack_loc, (char *) new,
 		     old_max_parm_reg * sizeof (rtx));
-	      bzero ((char *) (new + old_max_parm_reg),
+	      zero_memory ((char *) (new + old_max_parm_reg),
 		     (max_parm_reg - old_max_parm_reg) * sizeof (rtx));
 	      parm_reg_stack_loc = new;
 	    }
@@ -4933,10 +4739,6 @@ locate_and_pad_parm (passed_mode, type, in_regs, fndecl,
   pad_to_arg_alignment (initial_offset_ptr, boundary);
   *offset_ptr = *initial_offset_ptr;
 
-#ifdef PUSH_ROUNDING
-  if (passed_mode != BLKmode)
-    sizetree = size_int (PUSH_ROUNDING (TREE_INT_CST_LOW (sizetree)));
-#endif
 
   /* Pad_below needs the pre-rounded size to know how much to pad below
      so this must be done before rounding up.  */
@@ -5637,9 +5439,7 @@ init_function_start (subr, filename, line)
 
   current_function_returns_pcc_struct = 0;
   current_function_returns_struct = 0;
-  current_function_epilogue_delay_list = 0;
   current_function_uses_const_pool = 0;
-  current_function_uses_pic_offset_table = 0;
   current_function_cannot_inline = 0;
   /* CYGNUS LOCAL -- Branch Prediction */
   current_function_uses_expect = 0;
@@ -5685,14 +5485,11 @@ init_function_start (subr, filename, line)
   /* Make sure first insn is a note even if we don't want linenums.
      This makes sure the first insn will never be deleted.
      Also, final expects a note to appear there.  */
-  emit_note (NULL_PTR, NOTE_INSN_DELETED);
+  emit_note (NULL, NOTE_INSN_DELETED);
 
   /* Set flags used by final.c.  */
   if (aggregate_value_p (DECL_RESULT (subr)))
     {
-#ifdef PCC_STATIC_STRUCT_RETURN
-      current_function_returns_pcc_struct = 1;
-#endif
       current_function_returns_struct = 1;
     }
 
@@ -5799,17 +5596,7 @@ expand_function_start (subr, parms_have_cleanups)
   /* Make the label for return statements to jump to, if this machine
      does not have a one-instruction return and uses an epilogue,
      or if it returns a structure, or if it has parm cleanups.  */
-#ifdef HAVE_return
-  if (cleanup_label == 0 && HAVE_return
-      && ! current_function_instrument_entry_exit
-      && ! current_function_returns_pcc_struct
-      && ! (current_function_returns_struct && ! optimize))
-    return_label = 0;
-  else
-    return_label = gen_label_rtx ();
-#else
   return_label = gen_label_rtx ();
-#endif
 
   /* Initialize rtx used to return the value.  */
   /* Do this before assign_parms so that we copy the struct value address
@@ -5821,15 +5608,7 @@ expand_function_start (subr, parms_have_cleanups)
       /* Returning something that won't go in a register.  */
       register rtx value_address = 0;
 
-#ifdef PCC_STATIC_STRUCT_RETURN
-      if (current_function_returns_pcc_struct)
-	{
-	  int size = int_size_in_bytes (TREE_TYPE (DECL_RESULT (subr)));
-	  value_address = assemble_static_space (size);
-	}
-      else
-#endif
-	{
+
 	  /* Expect to be passed the address of a place to store the value.
 	     If it is passed as an argument, assign_parms will take care of
 	     it.  */
@@ -5838,7 +5617,6 @@ expand_function_start (subr, parms_have_cleanups)
 	      value_address = gen_reg_rtx (Pmode);
 	      emit_move_insn (value_address, struct_value_incoming_rtx);
 	    }
-	}
       if (value_address)
 	{
 	  DECL_RTL (DECL_RESULT (subr))
@@ -5907,12 +5685,12 @@ expand_function_start (subr, parms_have_cleanups)
      The move is supposed to make sdb output more accurate.  */
   /* Indicate the beginning of the function body,
      as opposed to parm setup.  */
-  emit_note (NULL_PTR, NOTE_INSN_FUNCTION_BEG);
+  emit_note (NULL, NOTE_INSN_FUNCTION_BEG);
 
   /* If doing stupid allocation, mark parms as born here.  */
 
   if (GET_CODE (get_last_insn ()) != NOTE)
-    emit_note (NULL_PTR, NOTE_INSN_DELETED);
+    emit_note (NULL, NOTE_INSN_DELETED);
   parm_birth_insn = get_last_insn ();
 
   if (obey_regdecls)
@@ -5981,14 +5759,14 @@ expand_function_start (subr, parms_have_cleanups)
 			 fun, Pmode,
 			 expand_builtin_return_addr (BUILT_IN_RETURN_ADDRESS,
 						     0,
-						     hard_frame_pointer_rtx),
+						     frame_pointer_rtx),
 			 Pmode);
     }
 
   /* After the display initializations is where the tail-recursion label
      should go, if we end up needing one.   Ensure we have a NOTE here
      since some things (like trampolines) get placed before this.  */
-  tail_recursion_reentry = emit_note (NULL_PTR, NOTE_INSN_DELETED);
+  tail_recursion_reentry = emit_note (NULL, NOTE_INSN_DELETED);
 
   /* Evaluate now the sizes of any types declared among the arguments.  */
   for (tem = nreverse (get_pending_sizes ()); tem; tem = TREE_CHAIN (tem))
@@ -6009,7 +5787,7 @@ expand_function_start (subr, parms_have_cleanups)
 
 static void
 diddle_return_value (doit, arg)
-     void (*doit) PARAMS ((rtx, void *));
+     void (*doit) (rtx, void *);
      void *arg;
 {
   rtx outgoing = current_function_return_rtx;
@@ -6225,13 +6003,12 @@ expand_function_end (filename, line, end_bindings)
 	use_variable (current_function_internal_arg_pointer);
     }
 
-  clear_pending_stack_adjust ();
   do_pending_stack_adjust ();
 
   /* Mark the end of the function body.
      If control reaches this insn, the function can drop through
      without returning a value.  */
-  emit_note (NULL_PTR, NOTE_INSN_FUNCTION_END);
+  emit_note (NULL, NOTE_INSN_FUNCTION_END);
 
   /* Output a linenumber for the end of the function.
      SDB depends on this.  */
@@ -6279,16 +6056,12 @@ expand_function_end (filename, line, end_bindings)
 			 fun, Pmode,
 			 expand_builtin_return_addr (BUILT_IN_RETURN_ADDRESS,
 						     0,
-						     hard_frame_pointer_rtx),
+						     frame_pointer_rtx),
 			 Pmode);
     }
 
-  /* If we had calls to alloca, and this machine needs
-     an accurate stack pointer to exit the function,
-     insert some code to save and restore the stack pointer.  */
-#ifdef EXIT_IGNORE_STACK
-  if (! EXIT_IGNORE_STACK)
-#endif
+  /* If we had calls to alloca, insert some code to save and restore the
+     stack pointer.  */
     if (current_function_calls_alloca)
       {
 	rtx tem = 0;
@@ -6360,7 +6133,9 @@ expand_function_end (filename, line, end_bindings)
       use_variable (outgoing);
     }
 
+#ifndef OLD_COMPILER
   use_return_register ();
+#endif
 
   /* If this is an implementation of __throw, do what's necessary to 
      communicate between __builtin_eh_return and the epilogue.  */
@@ -6370,13 +6145,6 @@ expand_function_end (filename, line, end_bindings)
      Otherwise, let the rtl chain end here, to drop through
      into the epilogue.  */
 
-#ifdef HAVE_return
-  if (HAVE_return)
-    {
-      emit_jump_insn (gen_return ());
-      emit_barrier ();
-    }
-#endif
 
   /* Fix up any gotos that jumped out to the outermost
      binding level of the function.

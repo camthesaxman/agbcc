@@ -32,17 +32,17 @@ Boston, MA 02111-1307, USA.  */
 #include "real.h"
 #include "recog.h"
 
-static void store_fixed_bit_field	PROTO((rtx, int, int, int, rtx, int));
-static void store_split_bit_field	PROTO((rtx, int, int, rtx, int));
-static rtx extract_fixed_bit_field	PROTO((enum machine_mode, rtx, int,
-					       int, int, rtx, int, int));
-static rtx mask_rtx			PROTO((enum machine_mode, int,
-					       int, int));
-static rtx lshift_value			PROTO((enum machine_mode, rtx,
-					       int, int));
-static rtx extract_split_bit_field	PROTO((rtx, int, int, int, int));
-static void do_cmp_and_jump		PROTO((rtx, rtx, enum rtx_code,
-					       enum machine_mode, rtx));
+static void store_fixed_bit_field	(rtx, int, int, int, rtx, int);
+static void store_split_bit_field	(rtx, int, int, rtx, int);
+static rtx extract_fixed_bit_field	(enum machine_mode, rtx, int,
+					       int, int, rtx, int, int);
+static rtx mask_rtx			(enum machine_mode, int,
+					       int, int);
+static rtx lshift_value			(enum machine_mode, rtx,
+					       int, int);
+static rtx extract_split_bit_field	(rtx, int, int, int, int);
+static void do_cmp_and_jump		(rtx, rtx, enum rtx_code,
+					       enum machine_mode, rtx);
 
 #define CEIL(x,y) (((x) + (y) - 1) / (y))
 
@@ -230,14 +230,6 @@ store_bit_field (str_rtx, bitsize, bitnum, fieldmode, value, align, total_size)
   register int offset = bitnum / unit;
   register int bitpos = bitnum % unit;
   register rtx op0 = str_rtx;
-#ifdef HAVE_insv
-  int insv_bitsize;
-
-  if (insn_operand_mode[(int) CODE_FOR_insv][3] == VOIDmode)
-    insv_bitsize = GET_MODE_BITSIZE (word_mode);
-  else
-    insv_bitsize = GET_MODE_BITSIZE (insn_operand_mode[(int) CODE_FOR_insv][3]);
-#endif
 
   if (GET_CODE (str_rtx) == MEM && ! MEM_IN_STRUCT_P (str_rtx))
     abort ();
@@ -276,14 +268,6 @@ store_bit_field (str_rtx, bitsize, bitnum, fieldmode, value, align, total_size)
       }
   }
 
-  /* If OP0 is a register, BITPOS must count within a word.
-     But as we have it, it counts within whatever size OP0 now has.
-     On a bigendian machine, these are not the same, so convert.  */
-  if (BYTES_BIG_ENDIAN
-      && GET_CODE (op0) != MEM
-      && unit > GET_MODE_BITSIZE (GET_MODE (op0)))
-    bitpos += unit - GET_MODE_BITSIZE (GET_MODE (op0));
-
   value = protect_from_queue (value, 0);
 
   if (flag_force_mem)
@@ -305,8 +289,7 @@ store_bit_field (str_rtx, bitsize, bitnum, fieldmode, value, align, total_size)
 	  if (GET_CODE (op0) == SUBREG)
 	    {
 	      if (GET_MODE (SUBREG_REG (op0)) == fieldmode
-		  || GET_MODE_CLASS (fieldmode) == MODE_INT
-		  || GET_MODE_CLASS (fieldmode) == MODE_PARTIAL_INT)
+		  || GET_MODE_CLASS (fieldmode) == MODE_INT)
 		op0 = SUBREG_REG (op0);
 	      else
 		/* Else we've got some float mode source being extracted into
@@ -328,7 +311,7 @@ store_bit_field (str_rtx, bitsize, bitnum, fieldmode, value, align, total_size)
      can be done with a movestrict instruction.  */
 
   if (GET_CODE (op0) != MEM
-      && (BYTES_BIG_ENDIAN ? bitpos + bitsize == unit : bitpos == 0)
+      && (bitpos == 0)
       && bitsize == GET_MODE_BITSIZE (fieldmode)
       && (GET_MODE (op0) == fieldmode
 	  || (movstrict_optab->handlers[(int) fieldmode].insn_code
@@ -353,8 +336,7 @@ store_bit_field (str_rtx, bitsize, bitnum, fieldmode, value, align, total_size)
 	  if (GET_CODE (op0) == SUBREG)
 	    {
 	      if (GET_MODE (SUBREG_REG (op0)) == fieldmode
-		  || GET_MODE_CLASS (fieldmode) == MODE_INT
-		  || GET_MODE_CLASS (fieldmode) == MODE_PARTIAL_INT)
+		  || GET_MODE_CLASS (fieldmode) == MODE_INT)
 		op0 = SUBREG_REG (op0);
 	      else
 		/* Else we've got some float mode source being extracted into
@@ -376,10 +358,7 @@ store_bit_field (str_rtx, bitsize, bitnum, fieldmode, value, align, total_size)
       /* Here we transfer the words of the field
 	 in the order least significant first.
 	 This is because the most significant word is the one which may
-	 be less than full.
-	 However, only do that if the value is not BLKmode.  */
-
-      int backwards = WORDS_BIG_ENDIAN && fieldmode != BLKmode;
+	 be less than full.  */
 
       int nwords = (bitsize + (BITS_PER_WORD - 1)) / BITS_PER_WORD;
       int i;
@@ -395,10 +374,8 @@ store_bit_field (str_rtx, bitsize, bitnum, fieldmode, value, align, total_size)
 	{
 	  /* If I is 0, use the low-order word in both field and target;
 	     if I is 1, use the next to lowest word; and so on.  */
-	  int wordnum = (backwards ? nwords - i - 1 : i);
-	  int bit_offset = (backwards
-			    ? MAX (bitsize - (i + 1) * BITS_PER_WORD, 0)
-			    : i * BITS_PER_WORD);
+	  int wordnum = i;
+	  int bit_offset = i * BITS_PER_WORD;
 	  store_bit_field (op0, MIN (BITS_PER_WORD,
 				     bitsize - i * BITS_PER_WORD),
 			   bitnum + bit_offset, word_mode,
@@ -459,147 +436,6 @@ store_bit_field (str_rtx, bitsize, bitnum, fieldmode, value, align, total_size)
   /* Now OFFSET is nonzero only if OP0 is memory
      and is therefore always measured in bytes.  */
 
-#ifdef HAVE_insv
-  if (HAVE_insv
-      && GET_MODE (value) != BLKmode
-      && !(bitsize == 1 && GET_CODE (value) == CONST_INT)
-      /* Ensure insv's size is wide enough for this field.  */
-      && (insv_bitsize >= bitsize)
-      && ! ((GET_CODE (op0) == REG || GET_CODE (op0) == SUBREG)
-	    && (bitsize + bitpos > insv_bitsize)))
-    {
-      int xbitpos = bitpos;
-      rtx value1;
-      rtx xop0 = op0;
-      rtx last = get_last_insn ();
-      rtx pat;
-      enum machine_mode maxmode;
-      int save_volatile_ok = volatile_ok;
-
-      maxmode = insn_operand_mode[(int) CODE_FOR_insv][3];
-      if (maxmode == VOIDmode)
-	maxmode = word_mode;
-
-      volatile_ok = 1;
-
-      /* If this machine's insv can only insert into a register, copy OP0
-	 into a register and save it back later.  */
-      /* This used to check flag_force_mem, but that was a serious
-	 de-optimization now that flag_force_mem is enabled by -O2.  */
-      if (GET_CODE (op0) == MEM
-	  && ! ((*insn_operand_predicate[(int) CODE_FOR_insv][0])
-		(op0, VOIDmode)))
-	{
-	  rtx tempreg;
-	  enum machine_mode bestmode;
-
-	  /* Get the mode to use for inserting into this field.  If OP0 is
-	     BLKmode, get the smallest mode consistent with the alignment. If
-	     OP0 is a non-BLKmode object that is no wider than MAXMODE, use its
-	     mode. Otherwise, use the smallest mode containing the field.  */
-
-	  if (GET_MODE (op0) == BLKmode
-	      || GET_MODE_SIZE (GET_MODE (op0)) > GET_MODE_SIZE (maxmode))
-	    bestmode
-	      = get_best_mode (bitsize, bitnum, align * BITS_PER_UNIT, maxmode,
-			       MEM_VOLATILE_P (op0));
-	  else
-	    bestmode = GET_MODE (op0);
-
-	  if (bestmode == VOIDmode
-	      || (SLOW_UNALIGNED_ACCESS && GET_MODE_SIZE (bestmode) > align))
-	    goto insv_loses;
-
-	  /* Adjust address to point to the containing unit of that mode.  */
-	  unit = GET_MODE_BITSIZE (bestmode);
-	  /* Compute offset as multiple of this unit, counting in bytes.  */
-	  offset = (bitnum / unit) * GET_MODE_SIZE (bestmode);
-	  bitpos = bitnum % unit;
-	  op0 = change_address (op0, bestmode, 
-				plus_constant (XEXP (op0, 0), offset));
-
-	  /* Fetch that unit, store the bitfield in it, then store the unit.  */
-	  tempreg = copy_to_reg (op0);
-	  store_bit_field (tempreg, bitsize, bitpos, fieldmode, value,
-			   align, total_size);
-	  emit_move_insn (op0, tempreg);
-	  return value;
-	}
-      volatile_ok = save_volatile_ok;
-
-      /* Add OFFSET into OP0's address.  */
-      if (GET_CODE (xop0) == MEM)
-	xop0 = change_address (xop0, byte_mode,
-			       plus_constant (XEXP (xop0, 0), offset));
-
-      /* If xop0 is a register, we need it in MAXMODE
-	 to make it acceptable to the format of insv.  */
-      if (GET_CODE (xop0) == SUBREG)
-	/* We can't just change the mode, because this might clobber op0,
-	   and we will need the original value of op0 if insv fails.  */
-	xop0 = gen_rtx_SUBREG (maxmode, SUBREG_REG (xop0), SUBREG_WORD (xop0));
-      if (GET_CODE (xop0) == REG && GET_MODE (xop0) != maxmode)
-	xop0 = gen_rtx_SUBREG (maxmode, xop0, 0);
-
-      /* On big-endian machines, we count bits from the most significant.
-	 If the bit field insn does not, we must invert.  */
-
-      if (BITS_BIG_ENDIAN != BYTES_BIG_ENDIAN)
-	xbitpos = unit - bitsize - xbitpos;
-
-      /* We have been counting XBITPOS within UNIT.
-	 Count instead within the size of the register.  */
-      if (BITS_BIG_ENDIAN && GET_CODE (xop0) != MEM)
-	xbitpos += GET_MODE_BITSIZE (maxmode) - unit;
-
-      unit = GET_MODE_BITSIZE (maxmode);
-
-      /* Convert VALUE to maxmode (which insv insn wants) in VALUE1.  */
-      value1 = value;
-      if (GET_MODE (value) != maxmode)
-	{
-	  if (GET_MODE_BITSIZE (GET_MODE (value)) >= bitsize)
-	    {
-	      /* Optimization: Don't bother really extending VALUE
-		 if it has all the bits we will actually use.  However,
-		 if we must narrow it, be sure we do it correctly.  */
-
-	      if (GET_MODE_SIZE (GET_MODE (value)) < GET_MODE_SIZE (maxmode))
-		{
-		  /* Avoid making subreg of a subreg, or of a mem.  */
-		  if (GET_CODE (value1) != REG)
-		    value1 = copy_to_reg (value1);
-		  value1 = gen_rtx_SUBREG (maxmode, value1, 0);
-		}
-	      else
-		value1 = gen_lowpart (maxmode, value1);
-	    }
-	  else if (!CONSTANT_P (value))
-	    /* Parse phase is supposed to make VALUE's data type
-	       match that of the component reference, which is a type
-	       at least as wide as the field; so VALUE should have
-	       a mode that corresponds to that type.  */
-	    abort ();
-	}
-
-      /* If this machine's insv insists on a register,
-	 get VALUE1 into a register.  */
-      if (! ((*insn_operand_predicate[(int) CODE_FOR_insv][3])
-	     (value1, maxmode)))
-	value1 = force_reg (maxmode, value1);
-
-      pat = gen_insv (xop0, GEN_INT (bitsize), GEN_INT (xbitpos), value1);
-      if (pat)
-	emit_insn (pat);
-      else
-        {
-	  delete_insns_since (last);
-	  store_fixed_bit_field (op0, offset, bitsize, bitpos, value, align);
-	}
-    }
-  else
-    insv_loses:
-#endif
     /* Insv is not available; store using shifts and boolean ops.  */
     store_fixed_bit_field (op0, offset, bitsize, bitpos, value, align);
   return value;
@@ -701,12 +537,6 @@ store_fixed_bit_field (op0, offset, bitsize, bitpos, value, struct_align)
      The bit field is contained entirely within OP0.
      BITPOS is the starting bit number within OP0.
      (OP0's mode may actually be narrower than MODE.)  */
-
-  if (BYTES_BIG_ENDIAN)
-      /* BITPOS is the distance between our msb
-	 and that of the containing datum.
-	 Convert it to the distance from the lsb.  */
-      bitpos = total_bits - bitsize - bitpos;
 
   /* Now BITPOS is always the distance between our lsb
      and that of OP0.  */
@@ -841,45 +671,9 @@ store_split_bit_field (op0, bitsize, bitpos, value, align)
       thissize = MIN (bitsize - bitsdone, BITS_PER_WORD);
       thissize = MIN (thissize, unit - thispos);
 
-      if (BYTES_BIG_ENDIAN)
-	{
-	  int total_bits;
-
-	  /* We must do an endian conversion exactly the same way as it is
-	     done in extract_bit_field, so that the two calls to
-	     extract_fixed_bit_field will have comparable arguments.  */
-	  if (GET_CODE (value) != MEM || GET_MODE (value) == BLKmode)
-	    total_bits = BITS_PER_WORD;
-	  else
-	    total_bits = GET_MODE_BITSIZE (GET_MODE (value));
-
-	  /* Fetch successively less significant portions.  */
-	  if (GET_CODE (value) == CONST_INT)
-	    part = GEN_INT (((unsigned HOST_WIDE_INT) (INTVAL (value))
-			     >> (bitsize - bitsdone - thissize))
-			    & (((HOST_WIDE_INT) 1 << thissize) - 1));
-	  else
-	    /* The args are chosen so that the last part includes the
-	       lsb.  Give extract_bit_field the value it needs (with
-	       endianness compensation) to fetch the piece we want.
-
-	       ??? We have no idea what the alignment of VALUE is, so
-	       we have to use a guess.  */
-	    part
-	      = extract_fixed_bit_field
-		(word_mode, value, 0, thissize,
-		 total_bits - bitsize + bitsdone, NULL_RTX, 1,
-		 GET_MODE (value) == VOIDmode
-		 ? UNITS_PER_WORD
-		 : (GET_MODE (value) == BLKmode
-		    ? 1
-		    : GET_MODE_ALIGNMENT (GET_MODE (value)) / BITS_PER_UNIT));
-	}
-      else
-	{
 	  /* Fetch successively more significant portions.  */
 	  if (GET_CODE (value) == CONST_INT)
-	    part = GEN_INT (((unsigned HOST_WIDE_INT) (INTVAL (value))
+	    part = GEN_INT (((HOST_WIDE_UINT) (INTVAL (value))
 			     >> bitsdone)
 			    & (((HOST_WIDE_INT) 1 << thissize) - 1));
 	  else
@@ -891,7 +685,6 @@ store_split_bit_field (op0, bitsize, bitpos, value, align)
 		 : (GET_MODE (value) == BLKmode
 		    ? 1
 		    : GET_MODE_ALIGNMENT (GET_MODE (value)) / BITS_PER_UNIT));
-	}
 
       /* If OP0 is a register, then handle OFFSET here.
 
@@ -961,27 +754,12 @@ extract_bit_field (str_rtx, bitsize, bitnum, unsignedp,
   register rtx op0 = str_rtx;
   rtx spec_target = target;
   rtx spec_target_subreg = 0;
-#ifdef HAVE_extv
-  int extv_bitsize;
-#endif
-#ifdef HAVE_extzv
   int extzv_bitsize;
-#endif
 
-#ifdef HAVE_extv
-  if (insn_operand_mode[(int) CODE_FOR_extv][0] == VOIDmode)
-    extv_bitsize = GET_MODE_BITSIZE (word_mode);
-  else
-    extv_bitsize = GET_MODE_BITSIZE (insn_operand_mode[(int) CODE_FOR_extv][0]);
-#endif
-
-#ifdef HAVE_extzv
-  if (insn_operand_mode[(int) CODE_FOR_extzv][0] == VOIDmode)
-    extzv_bitsize = GET_MODE_BITSIZE (word_mode);
-  else
-    extzv_bitsize
-      = GET_MODE_BITSIZE (insn_operand_mode[(int) CODE_FOR_extzv][0]);
-#endif
+    if (insn_operand_mode[(int)CODE_FOR_extzv][0] == VOIDmode)
+        extzv_bitsize = GET_MODE_BITSIZE(word_mode);
+    else
+        extzv_bitsize = GET_MODE_BITSIZE(insn_operand_mode[(int)CODE_FOR_extzv][0]);
 
   /* Discount the part of the structure before the desired byte.
      We need to know how many bytes are safe to reference after it.  */
@@ -993,22 +771,11 @@ extract_bit_field (str_rtx, bitsize, bitnum, unsignedp,
     tmode = mode;
   while (GET_CODE (op0) == SUBREG)
     {
-      int outer_size = GET_MODE_BITSIZE (GET_MODE (op0));
       int inner_size = GET_MODE_BITSIZE (GET_MODE (SUBREG_REG (op0)));
 
       offset += SUBREG_WORD (op0);
 
       inner_size = MIN (inner_size, BITS_PER_WORD);
-
-      if (BYTES_BIG_ENDIAN && (outer_size < inner_size))
-	{
-	  bitpos += inner_size - outer_size;
-	  if (bitpos > unit)
-	    {
-	      offset += (bitpos / unit);
-	      bitpos %= unit;
-	    }
-	}
 
       op0 = SUBREG_REG (op0);
     }
@@ -1031,14 +798,6 @@ extract_bit_field (str_rtx, bitsize, bitnum, unsignedp,
   /* ??? We currently assume TARGET is at least as big as BITSIZE.
      If that's wrong, the solution is to test for it and set TARGET to 0
      if needed.  */
-  
-  /* If OP0 is a register, BITPOS must count within a word.
-     But as we have it, it counts within whatever size OP0 now has.
-     On a bigendian machine, these are not the same, so convert.  */
-  if (BYTES_BIG_ENDIAN
-      && GET_CODE (op0) != MEM
-      && unit > GET_MODE_BITSIZE (GET_MODE (op0)))
-    bitpos += unit - GET_MODE_BITSIZE (GET_MODE (op0));
 
   /* Extracting a full-word or multi-word value
      from a structure in a register or aligned memory.
@@ -1060,9 +819,7 @@ extract_bit_field (str_rtx, bitsize, bitnum, unsignedp,
 		 if the value is in a register, and if mode_for_size is not
 		 the same mode as op0.  This causes us to get unnecessarily
 		 inefficient code from the Thumb port when -mbig-endian.  */
-	      && (BYTES_BIG_ENDIAN
-		  ? bitpos + bitsize == BITS_PER_WORD
-		  : bitpos == 0))))
+	      && (bitpos == 0))))
     {
       enum machine_mode mode1
 	= mode_for_size (bitsize, GET_MODE_CLASS (tmode), 0);
@@ -1072,8 +829,7 @@ extract_bit_field (str_rtx, bitsize, bitnum, unsignedp,
 	  if (GET_CODE (op0) == SUBREG)
 	    {
 	      if (GET_MODE (SUBREG_REG (op0)) == mode1
-		  || GET_MODE_CLASS (mode1) == MODE_INT
-		  || GET_MODE_CLASS (mode1) == MODE_PARTIAL_INT)
+		  || GET_MODE_CLASS (mode1) == MODE_INT)
 		op0 = SUBREG_REG (op0);
 	      else
 		/* Else we've got some float mode source being extracted into
@@ -1115,13 +871,9 @@ extract_bit_field (str_rtx, bitsize, bitnum, unsignedp,
 	  /* If I is 0, use the low-order word in both field and target;
 	     if I is 1, use the next to lowest word; and so on.  */
 	  /* Word number in TARGET to use.  */
-	  int wordnum = (WORDS_BIG_ENDIAN
-			 ? GET_MODE_SIZE (GET_MODE (target)) / UNITS_PER_WORD - i - 1
-			 : i);
+	  int wordnum = i;
 	  /* Offset from start of field in OP0.  */
-	  int bit_offset = (WORDS_BIG_ENDIAN
-			    ? MAX (0, bitsize - (i + 1) * BITS_PER_WORD)
-			    : i * BITS_PER_WORD);
+	  int bit_offset = i * BITS_PER_WORD;
 	  rtx target_part = operand_subword (target, wordnum, 1, VOIDmode);
 	  rtx result_part
 	    = extract_bit_field (op0, MIN (BITS_PER_WORD,
@@ -1148,7 +900,7 @@ extract_bit_field (str_rtx, bitsize, bitnum, unsignedp,
 	      total_words = GET_MODE_SIZE (GET_MODE (target)) / UNITS_PER_WORD;
 	      for (i = nwords; i < total_words; i++)
 		{
-		  int wordnum = WORDS_BIG_ENDIAN ? total_words - i - 1 : i;
+		  int wordnum = i;
 		  rtx target_part = operand_subword (target, wordnum, 1, VOIDmode);
 		  emit_move_insn (target_part, const0_rtx);
 		}
@@ -1197,11 +949,9 @@ extract_bit_field (str_rtx, bitsize, bitnum, unsignedp,
          machine with word length more 32 bits. */
       enum machine_mode itmode = int_mode_for_mode (tmode);
 
-#ifdef HAVE_extzv
-      if (HAVE_extzv
-	  && (extzv_bitsize >= bitsize)
-	  && ! ((GET_CODE (op0) == REG || GET_CODE (op0) == SUBREG)
-		&& (bitsize + bitpos > extzv_bitsize)))
+        if ((extzv_bitsize >= bitsize)
+            && !((GET_CODE(op0) == REG || GET_CODE(op0) == SUBREG)
+                 && (bitsize + bitpos > extzv_bitsize)))
 	{
 	  int xbitpos = bitpos, xoffset = offset;
 	  rtx bitsize_rtx, bitpos_rtx;
@@ -1276,15 +1026,6 @@ extract_bit_field (str_rtx, bitsize, bitnum, unsignedp,
 	  if (GET_CODE (xop0) == REG && GET_MODE (xop0) != maxmode)
 	    xop0 = gen_rtx_SUBREG (maxmode, xop0, 0);
 
-	  /* On big-endian machines, we count bits from the most significant.
-	     If the bit field insn does not, we must invert.  */
-	  if (BITS_BIG_ENDIAN != BYTES_BIG_ENDIAN)
-	    xbitpos = unit - bitsize - xbitpos;
-
-	  /* Now convert from counting within UNIT to counting in MAXMODE.  */
-	  if (BITS_BIG_ENDIAN && GET_CODE (xop0) != MEM)
-	    xbitpos += GET_MODE_BITSIZE (maxmode) - unit;
-
 	  unit = GET_MODE_BITSIZE (maxmode);
 
 	  if (xtarget == 0
@@ -1332,144 +1073,12 @@ extract_bit_field (str_rtx, bitsize, bitnum, unsignedp,
 	}
       else
         extzv_loses:
-#endif
 	target = extract_fixed_bit_field (itmode, op0, offset, bitsize, bitpos,
 					  target, 1, align);
     }
   else
     {
       /* Here we can assume that the desired field is and integer. */
-#ifdef HAVE_extv
-      if (HAVE_extv
-	  && (extv_bitsize >= bitsize)
-	  && ! ((GET_CODE (op0) == REG || GET_CODE (op0) == SUBREG)
-		&& (bitsize + bitpos > extv_bitsize)))
-	{
-	  int xbitpos = bitpos, xoffset = offset;
-	  rtx bitsize_rtx, bitpos_rtx;
-	  rtx last = get_last_insn ();
-	  rtx xop0 = op0, xtarget = target;
-	  rtx xspec_target = spec_target;
-	  rtx xspec_target_subreg = spec_target_subreg;
-	  rtx pat;
-	  enum machine_mode maxmode;
-
-	  maxmode = insn_operand_mode[(int) CODE_FOR_extv][0];
-	  if (maxmode == VOIDmode)
-	    maxmode = word_mode;
-
-	  if (GET_CODE (xop0) == MEM)
-	    {
-	      /* Is the memory operand acceptable?  */
-	      if (! ((*insn_operand_predicate[(int) CODE_FOR_extv][1])
-		     (xop0, GET_MODE (xop0))))
-		{
-		  /* No, load into a reg and extract from there.  */
-		  enum machine_mode bestmode;
-
-		  /* Get the mode to use for inserting into this field.  If
-		     OP0 is BLKmode, get the smallest mode consistent with the
-		     alignment. If OP0 is a non-BLKmode object that is no
-		     wider than MAXMODE, use its mode. Otherwise, use the
-		     smallest mode containing the field.  */
-
-		  if (GET_MODE (xop0) == BLKmode
-		      || (GET_MODE_SIZE (GET_MODE (op0))
-			  > GET_MODE_SIZE (maxmode)))
-		    bestmode = get_best_mode (bitsize, bitnum,
-					      align * BITS_PER_UNIT, maxmode,
-					      MEM_VOLATILE_P (xop0));
-		  else
-		    bestmode = GET_MODE (xop0);
-
-		  if (bestmode == VOIDmode
-		      || (SLOW_UNALIGNED_ACCESS && GET_MODE_SIZE (bestmode) > align))
-		    goto extv_loses;
-
-		  /* Compute offset as multiple of this unit,
-		     counting in bytes.  */
-		  unit = GET_MODE_BITSIZE (bestmode);
-		  xoffset = (bitnum / unit) * GET_MODE_SIZE (bestmode);
-		  xbitpos = bitnum % unit;
-		  xop0 = change_address (xop0, bestmode,
-					 plus_constant (XEXP (xop0, 0),
-							xoffset));
-		  /* Fetch it to a register in that size.  */
-		  xop0 = force_reg (bestmode, xop0);
-
-		  /* XBITPOS counts within UNIT, which is what is expected.  */
-		}
-	      else
-		/* Get ref to first byte containing part of the field.  */
-		xop0 = change_address (xop0, byte_mode,
-				       plus_constant (XEXP (xop0, 0), xoffset));
-	    }
-
-	  /* If op0 is a register, we need it in MAXMODE (which is usually
-	     SImode) to make it acceptable to the format of extv.  */
-	  if (GET_CODE (xop0) == SUBREG && GET_MODE (xop0) != maxmode)
-	    goto extv_loses;
-	  if (GET_CODE (xop0) == REG && GET_MODE (xop0) != maxmode)
-	    xop0 = gen_rtx_SUBREG (maxmode, xop0, 0);
-
-	  /* On big-endian machines, we count bits from the most significant.
-	     If the bit field insn does not, we must invert.  */
-	  if (BITS_BIG_ENDIAN != BYTES_BIG_ENDIAN)
-	    xbitpos = unit - bitsize - xbitpos;
-
-	  /* XBITPOS counts within a size of UNIT.
-	     Adjust to count within a size of MAXMODE.  */
-	  if (BITS_BIG_ENDIAN && GET_CODE (xop0) != MEM)
-	    xbitpos += (GET_MODE_BITSIZE (maxmode) - unit);
-
-	  unit = GET_MODE_BITSIZE (maxmode);
-
-	  if (xtarget == 0
-	      || (flag_force_mem && GET_CODE (xtarget) == MEM))
-	    xtarget = xspec_target = gen_reg_rtx (tmode);
-
-	  if (GET_MODE (xtarget) != maxmode)
-	    {
-	      if (GET_CODE (xtarget) == REG)
-		{
-		  int wider = (GET_MODE_SIZE (maxmode)
-			       > GET_MODE_SIZE (GET_MODE (xtarget)));
-		  xtarget = gen_lowpart (maxmode, xtarget);
-		  if (wider)
-		    xspec_target_subreg = xtarget;
-		}
-	      else
-		xtarget = gen_reg_rtx (maxmode);
-	    }
-
-	  /* If this machine's extv insists on a register target,
-	     make sure we have one.  */
-	  if (! ((*insn_operand_predicate[(int) CODE_FOR_extv][0])
-		 (xtarget, maxmode)))
-	    xtarget = gen_reg_rtx (maxmode);
-
-	  bitsize_rtx = GEN_INT (bitsize);
-	  bitpos_rtx = GEN_INT (xbitpos);
-
-	  pat = gen_extv (protect_from_queue (xtarget, 1),
-			  xop0, bitsize_rtx, bitpos_rtx);
-	  if (pat)
-	    {
-	      emit_insn (pat);
-	      target = xtarget;
-	      spec_target = xspec_target;
-	      spec_target_subreg = xspec_target_subreg;
-	    }
-	  else
-	    {
-	      delete_insns_since (last);
-	      target = extract_fixed_bit_field (tmode, op0, offset, bitsize,
-						bitpos, target, 0, align);
-	    }
-	} 
-      else
-	extv_loses:
-#endif
 	target = extract_fixed_bit_field (tmode, op0, offset, bitsize, bitpos,
 					  target, 0, align);
     }
@@ -1573,14 +1182,6 @@ extract_fixed_bit_field (tmode, op0, offset, bitsize, bitpos,
 
   mode = GET_MODE (op0);
 
-  if (BYTES_BIG_ENDIAN)
-    {
-      /* BITPOS is the distance between our msb and that of OP0.
-	 Convert it to the distance from the lsb.  */
-
-      bitpos = total_bits - bitsize - bitpos;
-    }
-
   /* Now BITPOS is always the distance between the field's lsb and that of OP0.
      We have reduced the big-endian case to the little-endian case.  */
 
@@ -1673,7 +1274,7 @@ mask_rtx (mode, bitpos, bitsize, complement)
     masklow = 0;
 
   if (bitpos + bitsize < HOST_BITS_PER_WIDE_INT)
-    masklow &= ((unsigned HOST_WIDE_INT) -1
+    masklow &= ((HOST_WIDE_UINT) -1
 		>> (HOST_BITS_PER_WIDE_INT - bitpos - bitsize));
   
   if (bitpos <= HOST_BITS_PER_WIDE_INT)
@@ -1682,7 +1283,7 @@ mask_rtx (mode, bitpos, bitsize, complement)
     maskhigh = (HOST_WIDE_INT) -1 << (bitpos - HOST_BITS_PER_WIDE_INT);
 
   if (bitpos + bitsize > HOST_BITS_PER_WIDE_INT)
-    maskhigh &= ((unsigned HOST_WIDE_INT) -1
+    maskhigh &= ((HOST_WIDE_UINT) -1
 		 >> (2 * HOST_BITS_PER_WIDE_INT - bitpos - bitsize));
   else
     maskhigh = 0;
@@ -1705,7 +1306,7 @@ lshift_value (mode, value, bitpos, bitsize)
      rtx value;
      int bitpos, bitsize;
 {
-  unsigned HOST_WIDE_INT v = INTVAL (value);
+  HOST_WIDE_UINT v = INTVAL (value);
   HOST_WIDE_INT low, high;
 
   if (bitsize < HOST_BITS_PER_WIDE_INT)
@@ -1799,18 +1400,9 @@ extract_split_bit_field (op0, bitsize, bitpos, unsignedp, align)
       bitsdone += thissize;
 
       /* Shift this part into place for the result.  */
-      if (BYTES_BIG_ENDIAN)
-	{
-	  if (bitsize != bitsdone)
-	    part = expand_shift (LSHIFT_EXPR, word_mode, part,
-				 build_int_2 (bitsize - bitsdone, 0), 0, 1);
-	}
-      else
-	{
 	  if (bitsdone != thissize)
 	    part = expand_shift (LSHIFT_EXPR, word_mode, part,
 				 build_int_2 (bitsdone - thissize, 0), 0, 1);
-	}
 
       if (first)
 	result = part;
@@ -1891,9 +1483,9 @@ expand_shift (code, mode, shifted, amount, target, unsignedp)
   if (SHIFT_COUNT_TRUNCATED)
     {
       if (GET_CODE (op1) == CONST_INT
-          && ((unsigned HOST_WIDE_INT) INTVAL (op1) >=
-	      (unsigned HOST_WIDE_INT) GET_MODE_BITSIZE (mode)))
-        op1 = GEN_INT ((unsigned HOST_WIDE_INT) INTVAL (op1)
+          && ((HOST_WIDE_UINT) INTVAL (op1) >=
+	      (HOST_WIDE_UINT) GET_MODE_BITSIZE (mode)))
+        op1 = GEN_INT ((HOST_WIDE_UINT) INTVAL (op1)
 		       % GET_MODE_BITSIZE (mode));
       else if (GET_CODE (op1) == SUBREG
 	       && SUBREG_WORD (op1) == 0)
@@ -2045,15 +1637,15 @@ struct algorithm
   char log[MAX_BITS_PER_WORD];
 };
 
-static void synth_mult			PROTO((struct algorithm *,
-					       unsigned HOST_WIDE_INT,
-					       int));
-static unsigned HOST_WIDE_INT choose_multiplier PROTO((unsigned HOST_WIDE_INT,
+static void synth_mult			(struct algorithm *,
+					       HOST_WIDE_UINT,
+					       int);
+static HOST_WIDE_UINT choose_multiplier (HOST_WIDE_UINT,
 						       int, int,
-						       unsigned HOST_WIDE_INT *,
-						       int *, int *));
-static unsigned HOST_WIDE_INT invert_mod2n	PROTO((unsigned HOST_WIDE_INT,
-						       int));
+						       HOST_WIDE_UINT *,
+						       int *, int *);
+static HOST_WIDE_UINT invert_mod2n	(HOST_WIDE_UINT,
+						       int);
 /* Compute and return the best algorithm for multiplying by T.
    The algorithm must cost less than cost_limit
    If retval.cost >= COST_LIMIT, no algorithm was found and all
@@ -2062,13 +1654,13 @@ static unsigned HOST_WIDE_INT invert_mod2n	PROTO((unsigned HOST_WIDE_INT,
 static void
 synth_mult (alg_out, t, cost_limit)
      struct algorithm *alg_out;
-     unsigned HOST_WIDE_INT t;
+     HOST_WIDE_UINT t;
      int cost_limit;
 {
   int m;
   struct algorithm *alg_in, *best_alg;
   int cost;
-  unsigned HOST_WIDE_INT q;
+  HOST_WIDE_UINT q;
 
   /* Indicate that no algorithm is yet found.  If no algorithm
      is found, this value will be returned and indicate failure.  */
@@ -2130,7 +1722,7 @@ synth_mult (alg_out, t, cost_limit)
   /* If we have an odd number, add or subtract one.  */
   if ((t & 1) != 0)
     {
-      unsigned HOST_WIDE_INT w;
+      HOST_WIDE_UINT w;
 
       for (w = 1; (w & t) != 0; w <<= 1)
 	;
@@ -2191,9 +1783,9 @@ synth_mult (alg_out, t, cost_limit)
 
   for (m = floor_log2 (t - 1); m >= 2; m--)
     {
-      unsigned HOST_WIDE_INT d;
+      HOST_WIDE_UINT d;
 
-      d = ((unsigned HOST_WIDE_INT) 1 << m) + 1;
+      d = ((HOST_WIDE_UINT) 1 << m) + 1;
       if (t % d == 0 && t > d)
 	{
 	  cost = MIN (shiftadd_cost[m], add_cost + shift_cost[m]);
@@ -2212,7 +1804,7 @@ synth_mult (alg_out, t, cost_limit)
 	  break;
 	}
 
-      d = ((unsigned HOST_WIDE_INT) 1 << m) - 1;
+      d = ((HOST_WIDE_UINT) 1 << m) - 1;
       if (t % d == 0 && t > d)
 	{
 	  cost = MIN (shiftsub_cost[m], add_cost + shift_cost[m]);
@@ -2289,9 +1881,9 @@ synth_mult (alg_out, t, cost_limit)
      best_alg is normally undefined, and this is a critical function.  */
   alg_out->ops = best_alg->ops + 1;
   alg_out->cost = cost_limit;
-  bcopy ((char *) best_alg->op, (char *) alg_out->op,
+  copy_memory ((char *) best_alg->op, (char *) alg_out->op,
 	 alg_out->ops * sizeof *alg_out->op);
-  bcopy ((char *) best_alg->log, (char *) alg_out->log,
+  copy_memory ((char *) best_alg->log, (char *) alg_out->log,
 	 alg_out->ops * sizeof *alg_out->log);
 }
 
@@ -2514,7 +2106,7 @@ expand_mult (mode, op0, op1, target, unsignedp)
 
 int
 ceil_log2 (x)
-     unsigned HOST_WIDE_INT x;
+     HOST_WIDE_UINT x;
 {
   return floor_log2 (x - 1) + 1;
 }
@@ -2536,20 +2128,20 @@ ceil_log2 (x)
    where m is the full HOST_BITS_PER_WIDE_INT + 1 bit multiplier.  */
 
 static
-unsigned HOST_WIDE_INT
+HOST_WIDE_UINT
 choose_multiplier (d, n, precision, multiplier_ptr, post_shift_ptr, lgup_ptr)
-     unsigned HOST_WIDE_INT d;
+     HOST_WIDE_UINT d;
      int n;
      int precision;
-     unsigned HOST_WIDE_INT *multiplier_ptr;
+     HOST_WIDE_UINT *multiplier_ptr;
      int *post_shift_ptr;
      int *lgup_ptr;
 {
-  unsigned HOST_WIDE_INT mhigh_hi, mhigh_lo;
-  unsigned HOST_WIDE_INT mlow_hi, mlow_lo;
+  HOST_WIDE_UINT mhigh_hi, mhigh_lo;
+  HOST_WIDE_UINT mlow_hi, mlow_lo;
   int lgup, post_shift;
   int pow, pow2;
-  unsigned HOST_WIDE_INT nh, nl, dummy1, dummy2;
+  HOST_WIDE_UINT nh, nl, dummy1, dummy2;
 
   /* lgup = ceil(log2(divisor)); */
   lgup = ceil_log2 (d);
@@ -2570,22 +2162,22 @@ choose_multiplier (d, n, precision, multiplier_ptr, post_shift_ptr, lgup_ptr)
   /* mlow = 2^(N + lgup)/d */
  if (pow >= HOST_BITS_PER_WIDE_INT)
     {
-      nh = (unsigned HOST_WIDE_INT) 1 << (pow - HOST_BITS_PER_WIDE_INT);
+      nh = (HOST_WIDE_UINT) 1 << (pow - HOST_BITS_PER_WIDE_INT);
       nl = 0;
     }
   else
     {
       nh = 0;
-      nl = (unsigned HOST_WIDE_INT) 1 << pow;
+      nl = (HOST_WIDE_UINT) 1 << pow;
     }
   div_and_round_double (TRUNC_DIV_EXPR, 1, nl, nh, d, (HOST_WIDE_INT) 0,
 			&mlow_lo, &mlow_hi, &dummy1, &dummy2);
 
   /* mhigh = (2^(N + lgup) + 2^N + lgup - precision)/d */
   if (pow2 >= HOST_BITS_PER_WIDE_INT)
-    nh |= (unsigned HOST_WIDE_INT) 1 << (pow2 - HOST_BITS_PER_WIDE_INT);
+    nh |= (HOST_WIDE_UINT) 1 << (pow2 - HOST_BITS_PER_WIDE_INT);
   else
-    nl |= (unsigned HOST_WIDE_INT) 1 << pow2;
+    nl |= (HOST_WIDE_UINT) 1 << pow2;
   div_and_round_double (TRUNC_DIV_EXPR, 1, nl, nh, d, (HOST_WIDE_INT) 0,
 			&mhigh_lo, &mhigh_hi, &dummy1, &dummy2);
 
@@ -2603,8 +2195,8 @@ choose_multiplier (d, n, precision, multiplier_ptr, post_shift_ptr, lgup_ptr)
   /* Reduce to lowest terms */
   for (post_shift = lgup; post_shift > 0; post_shift--)
     {
-      unsigned HOST_WIDE_INT ml_lo = (mlow_hi << (HOST_BITS_PER_WIDE_INT - 1)) | (mlow_lo >> 1);
-      unsigned HOST_WIDE_INT mh_lo = (mhigh_hi << (HOST_BITS_PER_WIDE_INT - 1)) | (mhigh_lo >> 1);
+      HOST_WIDE_UINT ml_lo = (mlow_hi << (HOST_BITS_PER_WIDE_INT - 1)) | (mlow_lo >> 1);
+      HOST_WIDE_UINT mh_lo = (mhigh_hi << (HOST_BITS_PER_WIDE_INT - 1)) | (mhigh_lo >> 1);
       if (ml_lo >= mh_lo)
 	break;
 
@@ -2618,7 +2210,7 @@ choose_multiplier (d, n, precision, multiplier_ptr, post_shift_ptr, lgup_ptr)
   *lgup_ptr = lgup;
   if (n < HOST_BITS_PER_WIDE_INT)
     {
-      unsigned HOST_WIDE_INT mask = ((unsigned HOST_WIDE_INT) 1 << n) - 1;
+      HOST_WIDE_UINT mask = ((HOST_WIDE_UINT) 1 << n) - 1;
       *multiplier_ptr = mhigh_lo & mask;
       return mhigh_lo >= mask;
     }
@@ -2632,9 +2224,9 @@ choose_multiplier (d, n, precision, multiplier_ptr, post_shift_ptr, lgup_ptr)
 /* Compute the inverse of X mod 2**n, i.e., find Y such that X * Y is
    congruent to 1 (mod 2**N).  */
 
-static unsigned HOST_WIDE_INT
+static HOST_WIDE_UINT
 invert_mod2n (x, n)
-     unsigned HOST_WIDE_INT x;
+     HOST_WIDE_UINT x;
      int n;
 {
   /* Solve x*y == 1 (mod 2^n), where x is odd.  Return y.  */
@@ -2643,13 +2235,13 @@ invert_mod2n (x, n)
      x*y == 1 mod 2^3, since x is assumed odd.
      Each iteration doubles the number of bits of significance in y.  */
 
-  unsigned HOST_WIDE_INT mask;
-  unsigned HOST_WIDE_INT y = x;
+  HOST_WIDE_UINT mask;
+  HOST_WIDE_UINT y = x;
   int nbit = 3;
 
   mask = (n == HOST_BITS_PER_WIDE_INT
-	  ? ~(unsigned HOST_WIDE_INT) 0
-	  : ((unsigned HOST_WIDE_INT) 1 << n) - 1);
+	  ? ~(HOST_WIDE_UINT) 0
+	  : ((HOST_WIDE_UINT) 1 << n) - 1);
 
   while (nbit < n)
     {
@@ -2710,7 +2302,7 @@ rtx
 expand_mult_highpart (mode, op0, cnst1, target, unsignedp, max_cost)
      enum machine_mode mode;
      register rtx op0, target;
-     unsigned HOST_WIDE_INT cnst1;
+     HOST_WIDE_UINT cnst1;
      int unsignedp;
      int max_cost;
 {
@@ -3066,10 +2658,10 @@ expand_divmod (rem_flag, code, mode, op0, op1, target, unsignedp)
 	  {
 	    if (unsignedp)
 	      {
-		unsigned HOST_WIDE_INT mh, ml;
+		HOST_WIDE_UINT mh, ml;
 		int pre_shift, post_shift;
 		int dummy;
-		unsigned HOST_WIDE_INT d = INTVAL (op1);
+		HOST_WIDE_UINT d = INTVAL (op1);
 
 		if (EXACT_POWER_OF_2_OR_ZERO_P (d))
 		  {
@@ -3090,7 +2682,7 @@ expand_divmod (rem_flag, code, mode, op0, op1, target, unsignedp)
 		  }
 		else if (size <= HOST_BITS_PER_WIDE_INT)
 		  {
-		    if (d >= ((unsigned HOST_WIDE_INT) 1 << (size - 1)))
+		    if (d >= ((HOST_WIDE_UINT) 1 << (size - 1)))
 		      {
 			/* Most significant bit of divisor is set; emit an scc
 			   insn.  */
@@ -3181,10 +2773,10 @@ expand_divmod (rem_flag, code, mode, op0, op1, target, unsignedp)
 	      }
 	    else		/* TRUNC_DIV, signed */
 	      {
-		unsigned HOST_WIDE_INT ml;
+		HOST_WIDE_UINT ml;
 		int lgup, post_shift;
 		HOST_WIDE_INT d = INTVAL (op1);
-		unsigned HOST_WIDE_INT abs_d = d >= 0 ? d : -d;
+		HOST_WIDE_UINT abs_d = d >= 0 ? d : -d;
 
 		/* n rem d = n rem -d */
 		if (rem_flag && d < 0)
@@ -3198,7 +2790,7 @@ expand_divmod (rem_flag, code, mode, op0, op1, target, unsignedp)
 		else if (d == -1)
 		  quotient = expand_unop (compute_mode, neg_optab, op0,
 					  tquotient, 0);
-		else if (abs_d == (unsigned HOST_WIDE_INT) 1 << (size - 1))
+		else if (abs_d == (HOST_WIDE_UINT) 1 << (size - 1))
 		  {
 		    /* This case is not handled correctly below.  */
 		    quotient = emit_store_flag (tquotient, EQ, op0, op1,
@@ -3266,7 +2858,7 @@ expand_divmod (rem_flag, code, mode, op0, op1, target, unsignedp)
 		  {
 		    choose_multiplier (abs_d, size, size - 1,
 				       &ml, &post_shift, &lgup);
-		    if (ml < (unsigned HOST_WIDE_INT) 1 << (size - 1))
+		    if (ml < (HOST_WIDE_UINT) 1 << (size - 1))
 		      {
 			rtx t1, t2, t3;
 
@@ -3292,7 +2884,7 @@ expand_divmod (rem_flag, code, mode, op0, op1, target, unsignedp)
 		      {
 			rtx t1, t2, t3, t4;
 
-			ml |= (~(unsigned HOST_WIDE_INT) 0) << (size - 1);
+			ml |= (~(HOST_WIDE_UINT) 0) << (size - 1);
 			extra_cost = (shift_cost[post_shift]
 				      + shift_cost[size - 1] + 2 * add_cost);
 			t1 = expand_mult_highpart (compute_mode, op0, ml,
@@ -3337,7 +2929,7 @@ expand_divmod (rem_flag, code, mode, op0, op1, target, unsignedp)
       /* We will come here only for signed operations.  */
 	if (op1_is_constant && HOST_BITS_PER_WIDE_INT >= size)
 	  {
-	    unsigned HOST_WIDE_INT mh, ml;
+	    HOST_WIDE_UINT mh, ml;
 	    int pre_shift, lgup, post_shift;
 	    HOST_WIDE_INT d = INTVAL (op1);
 
@@ -3509,7 +3101,7 @@ expand_divmod (rem_flag, code, mode, op0, op1, target, unsignedp)
 	    if (op1_is_constant && EXACT_POWER_OF_2_OR_ZERO_P (INTVAL (op1)))
 	      {
 		rtx t1, t2, t3;
-		unsigned HOST_WIDE_INT d = INTVAL (op1);
+		HOST_WIDE_UINT d = INTVAL (op1);
 		t1 = expand_shift (RSHIFT_EXPR, compute_mode, op0,
 				   build_int_2 (floor_log2 (d), 0),
 				   tquotient, 1);
@@ -3607,7 +3199,7 @@ expand_divmod (rem_flag, code, mode, op0, op1, target, unsignedp)
 		   languages (Ada).  */
 
 		rtx t1, t2, t3;
-		unsigned HOST_WIDE_INT d = INTVAL (op1);
+		HOST_WIDE_UINT d = INTVAL (op1);
 		t1 = expand_shift (RSHIFT_EXPR, compute_mode, op0,
 				   build_int_2 (floor_log2 (d), 0),
 				   tquotient, 0);
@@ -3724,7 +3316,7 @@ expand_divmod (rem_flag, code, mode, op0, op1, target, unsignedp)
 	if (op1_is_constant && HOST_BITS_PER_WIDE_INT >= size)
 	  {
 	    HOST_WIDE_INT d = INTVAL (op1);
-	    unsigned HOST_WIDE_INT ml;
+	    HOST_WIDE_UINT ml;
 	    int post_shift;
 	    rtx t1;
 
@@ -4351,7 +3943,7 @@ emit_store_flag (target, code, op0, op1, mode, unsignedp, normalizep)
 
       else if (GET_MODE_BITSIZE (mode) <= HOST_BITS_PER_WIDE_INT
 	       && ((STORE_FLAG_VALUE & GET_MODE_MASK (mode))
-		   == (unsigned HOST_WIDE_INT) 1 << (GET_MODE_BITSIZE (mode) - 1)))
+		   == (HOST_WIDE_UINT) 1 << (GET_MODE_BITSIZE (mode) - 1)))
 	;
       else
 	return 0;

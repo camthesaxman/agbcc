@@ -90,7 +90,7 @@ insn_template[24] to be "clrd %0", and insn_n_operands[24] to be 1.
 It would not make an case in output_insn_hairy because the template
 given in the entry is a constant (it does not start with `*').  */
 
-#include "hconfig.h"
+#include "config.h"
 #include "system.h"
 #include "rtl.h"
 #include "obstack.h"
@@ -107,13 +107,13 @@ struct obstack *rtl_obstack = &obstack;
 #define obstack_chunk_alloc xmalloc
 #define obstack_chunk_free free
 
-static void fatal PVPROTO ((const char *, ...))
+static void fatal (const char *, ...)
   ATTRIBUTE_PRINTF_1 ATTRIBUTE_NORETURN;
-void fancy_abort PROTO((void)) ATTRIBUTE_NORETURN;
-static void error PVPROTO ((const char *, ...)) ATTRIBUTE_PRINTF_1;
+void fancy_abort (void) ATTRIBUTE_NORETURN;
+static void error (const char *, ...) ATTRIBUTE_PRINTF_1;
 static void mybcopy ();
 static void mybzero ();
-static int n_occurrences PROTO((int, char *));
+static int n_occurrences (int, char *);
 
 /* Define this so we can link with print-rtl.o to get debug_rtx function.  */
 char **insn_name_ptr = 0;
@@ -172,17 +172,17 @@ int have_constraints;
 
 static int have_error;
 
-static char * name_for_index PROTO((int));
-static void output_prologue PROTO((void));
-static void output_epilogue PROTO((void));
-static void scan_operands PROTO((rtx, int, int));
-static void process_template PROTO((struct data *, char *));
-static void validate_insn_alternatives PROTO((struct data *));
-static void gen_insn PROTO((rtx));
-static void gen_peephole PROTO((rtx));
-static void gen_expand PROTO((rtx));
-static void gen_split PROTO((rtx));
-static int n_occurrences PROTO((int, char *));
+static char * name_for_index (int);
+static void output_prologue (void);
+static void output_epilogue (void);
+static void scan_operands (rtx, int, int);
+static void process_template (struct data *, char *);
+static void validate_insn_alternatives (struct data *);
+static void gen_insn (rtx);
+static void gen_peephole (rtx);
+static void gen_expand (rtx);
+static void gen_split (rtx);
+static int n_occurrences (int, char *);
 
 static char *
 name_for_index (index)
@@ -226,7 +226,7 @@ from the machine description file `md'.  */\n\n");
   printf ("#include \"insn-attr.h\"\n\n");
   printf ("#include \"insn-codes.h\"\n\n");
   printf ("#include \"recog.h\"\n\n");
-
+  printf ("#include \"tree.h\"\n");
   printf ("#include \"output.h\"\n");
 }
 
@@ -904,27 +904,27 @@ gen_split (split)
   d->outfun = 0;
 }
 
-PTR
+void *
 xmalloc (size)
   size_t size;
 {
-  register PTR val = (PTR) malloc (size);
+  register void *val = malloc (size);
 
   if (val == 0)
     fatal ("virtual memory exhausted");
   return val;
 }
 
-PTR
+void *
 xrealloc (old, size)
-  PTR old;
+  void *old;
   size_t size;
 {
-  register PTR ptr;
+  register void *ptr;
   if (old)
-    ptr = (PTR) realloc (old, size);
+    ptr = realloc (old, size);
   else
-    ptr = (PTR) malloc (size);
+    ptr = malloc (size);
   if (!ptr)
     fatal ("virtual memory exhausted");
   return ptr;
@@ -950,24 +950,18 @@ mybcopy (b1, b2, length)
 }
 
 static void
-fatal VPROTO ((const char *format, ...))
+fatal (const char *format, ...)
 {
-#ifndef ANSI_PROTOTYPES
-  const char *format;
-#endif
   va_list ap;
 
-  VA_START (ap, format);
+  va_start (ap, format);
 
-#ifndef ANSI_PROTOTYPES
-  format = va_arg (ap, const char *);
-#endif
 
   fprintf (stderr, "genoutput: ");
   vfprintf (stderr, format, ap);
   va_end (ap);
   fprintf (stderr, "\n");
-  exit (FATAL_EXIT_CODE);
+  exit (EXIT_FAILURE);
 }
 
 /* More 'friendly' abort that prints the line and file.
@@ -980,18 +974,12 @@ fancy_abort ()
 }
 
 static void
-error VPROTO ((const char *format, ...))
+error (const char *format, ...)
 {
-#ifndef ANSI_PROTOTYPES
-  const char *format;
-#endif
   va_list ap;
 
-  VA_START (ap, format);
+  va_start (ap, format);
 
-#ifndef ANSI_PROTOTYPES
-  format = va_arg (ap, const char *);
-#endif
 
   fprintf (stderr, "genoutput: ");
   vfprintf (stderr, format, ap);
@@ -1019,7 +1007,7 @@ main (argc, argv)
   if (infile == 0)
     {
       perror (argv[1]);
-      exit (FATAL_EXIT_CODE);
+      exit (EXIT_FAILURE);
     }
 
   init_rtl ();
@@ -1054,7 +1042,7 @@ main (argc, argv)
 
   fflush (stdout);
   exit (ferror (stdout) != 0 || have_error
-	? FATAL_EXIT_CODE : SUCCESS_EXIT_CODE);
+	? EXIT_FAILURE : EXIT_SUCCESS);
 
   /* NOTREACHED */
   return 0;

@@ -262,46 +262,46 @@ static rtx mem_set_list;
 static HARD_REG_SET elim_reg_set;
 
 /* Forward declarations */
-static void find_basic_blocks_1		PROTO((rtx, rtx));
-static void add_edge			PROTO((int, int));
-static void add_edge_to_label		PROTO((int, rtx));
-static void make_edges			PROTO((int));
-static void mark_label_ref		PROTO((int, rtx));
-static void delete_unreachable_blocks	PROTO((void));
-static int delete_block			PROTO((int));
-static void life_analysis_1		PROTO((rtx, int));
-static void propagate_block		PROTO((regset, rtx, rtx, int, 
-					       regset, int));
-static int set_noop_p			PROTO((rtx));
-static int noop_move_p			PROTO((rtx));
-static void record_volatile_insns	PROTO((rtx));
-static void mark_regs_live_at_end	PROTO((regset));
-static int insn_dead_p			PROTO((rtx, regset, int, rtx));
-static int libcall_dead_p		PROTO((rtx, regset, rtx, rtx));
-static void mark_set_regs		PROTO((regset, regset, rtx,
-					       rtx, regset));
-static void mark_set_1			PROTO((regset, regset, rtx,
-					       rtx, regset));
+static void find_basic_blocks_1		(rtx, rtx);
+static void add_edge			(int, int);
+static void add_edge_to_label		(int, rtx);
+static void make_edges			(int);
+static void mark_label_ref		(int, rtx);
+static void delete_unreachable_blocks	(void);
+static int delete_block			(int);
+static void life_analysis_1		(rtx, int);
+static void propagate_block		(regset, rtx, rtx, int, 
+					       regset, int);
+static int set_noop_p			(rtx);
+static int noop_move_p			(rtx);
+static void record_volatile_insns	(rtx);
+static void mark_regs_live_at_end	(regset);
+static int insn_dead_p			(rtx, regset, int, rtx);
+static int libcall_dead_p		(rtx, regset, rtx, rtx);
+static void mark_set_regs		(regset, regset, rtx,
+					       rtx, regset);
+static void mark_set_1			(regset, regset, rtx,
+					       rtx, regset);
 #ifdef AUTO_INC_DEC
-static void find_auto_inc		PROTO((regset, rtx, rtx));
-static int try_pre_increment_1		PROTO((rtx));
-static int try_pre_increment		PROTO((rtx, rtx, HOST_WIDE_INT));
+static void find_auto_inc		(regset, rtx, rtx);
+static int try_pre_increment_1		(rtx);
+static int try_pre_increment		(rtx, rtx, HOST_WIDE_INT);
 #endif
-static void mark_used_regs		PROTO((regset, regset, rtx, int, rtx));
-void dump_flow_info			PROTO((FILE *));
-static void add_pred_succ		PROTO ((int, int, int_list_ptr *,
-						int_list_ptr *, int *, int *));
-static int_list_ptr alloc_int_list_node PROTO ((int_list_block **));
-static int_list_ptr add_int_list_node   PROTO ((int_list_block **,
-						int_list **, int));
+static void mark_used_regs		(regset, regset, rtx, int, rtx);
+void dump_flow_info			(FILE *);
+static void add_pred_succ		(int, int, int_list_ptr *,
+						int_list_ptr *, int *, int *);
+static int_list_ptr alloc_int_list_node (int_list_block **);
+static int_list_ptr add_int_list_node   (int_list_block **,
+						int_list **, int);
 /* CYGNUS LOCAL LRS */
-void init_regset_vector		PROTO ((regset *, int,
-						struct obstack *));
-static void count_reg_sets_1		PROTO ((rtx));
-static void count_reg_sets		PROTO ((rtx));
-static void count_reg_references	PROTO ((rtx));
-static void notice_stack_pointer_modification PROTO ((rtx, rtx));
-static void invalidate_mems_from_autoinc	PROTO ((rtx));
+void init_regset_vector		(regset *, int,
+						struct obstack *);
+static void count_reg_sets_1		(rtx);
+static void count_reg_sets		(rtx);
+static void count_reg_references	(rtx);
+static void notice_stack_pointer_modification (rtx, rtx);
+static void invalidate_mems_from_autoinc	(rtx);
 
 /* Find basic blocks of the current function.
    F is the first insn of the function and NREGS the number of register numbers
@@ -400,14 +400,14 @@ find_basic_blocks (f, nregs, file)
   x_basic_block_end = XNMALLOC (rtx, n_basic_blocks);
   basic_block_succ = XNMALLOC (int_list_ptr, n_basic_blocks);
   basic_block_pred = XNMALLOC (int_list_ptr, n_basic_blocks);
-  bzero ((char *)basic_block_succ, n_basic_blocks * sizeof (int_list_ptr));
-  bzero ((char *)basic_block_pred, n_basic_blocks * sizeof (int_list_ptr));
+  zero_memory ((char *)basic_block_succ, n_basic_blocks * sizeof (int_list_ptr));
+  zero_memory ((char *)basic_block_pred, n_basic_blocks * sizeof (int_list_ptr));
 
   basic_block_computed_jump_target = (char *) oballoc (n_basic_blocks);
   basic_block_loop_depth = XNMALLOC (short, n_basic_blocks);
   uid_block_number = XNMALLOC (int, (max_uid_for_flow + 1));
   uid_volatile = XNMALLOC (char, (max_uid_for_flow + 1));
-  bzero (uid_volatile, max_uid_for_flow + 1);
+  zero_memory (uid_volatile, max_uid_for_flow + 1);
 
   find_basic_blocks_1 (f, nonlocal_label_list);
 }
@@ -458,11 +458,11 @@ find_basic_blocks_1 (f, nonlocal_labels)
 
   label_value_list = 0;
   block_live_static = block_live;
-  bzero (block_live, n_basic_blocks);
-  bzero (block_marked, n_basic_blocks);
-  bzero (basic_block_computed_jump_target, n_basic_blocks);
-  bzero ((char *) active_eh_region, (max_uid_for_flow + 1) * sizeof (int));
-  bzero ((char *) nested_eh_region, (max_label_num () + 1) * sizeof (int));
+  zero_memory (block_live, n_basic_blocks);
+  zero_memory (block_marked, n_basic_blocks);
+  zero_memory (basic_block_computed_jump_target, n_basic_blocks);
+  zero_memory ((char *) active_eh_region, (max_uid_for_flow + 1) * sizeof (int));
+  zero_memory ((char *) nested_eh_region, (max_label_num () + 1) * sizeof (int));
   current_function_has_computed_jump = 0;
 
   /* Initialize with just block 0 reachable and no blocks marked.  */
@@ -1336,15 +1336,7 @@ mark_regs_live_at_end (set)
 {
   int i;
   
-#ifdef EXIT_IGNORE_STACK
-  if (! EXIT_IGNORE_STACK
-      || (! FRAME_POINTER_REQUIRED
-	  && ! current_function_calls_alloca
-	  && flag_omit_frame_pointer)
-      || current_function_sp_is_unchanging)
-#endif
-    /* If exiting needs the right stack value,
-       consider the stack pointer live at the end of the function.  */
+    /* Consider the stack pointer live at the end of the function.  */
     SET_REGNO_REG_SET (set, STACK_POINTER_REGNUM);
 
   /* Mark the frame pointer is needed at the end of the function.  If
@@ -1352,21 +1344,13 @@ mark_regs_live_at_end (set)
      of each basic block by reload.  */
 
   SET_REGNO_REG_SET (set, FRAME_POINTER_REGNUM);
-#if FRAME_POINTER_REGNUM != HARD_FRAME_POINTER_REGNUM
-  /* If they are different, also mark the hard frame pointer as live */
-  SET_REGNO_REG_SET (set, HARD_FRAME_POINTER_REGNUM);
-#endif      
 
 
   /* Mark all global registers and all registers used by the epilogue
      as being live at the end of the function since they may be
      referenced by our caller.  */
   for (i = 0; i < FIRST_PSEUDO_REGISTER; i++)
-    if (global_regs[i]
-#ifdef EPILOGUE_USES
-	|| EPILOGUE_USES (i)
-#endif
-	)
+    if (global_regs[i])
       SET_REGNO_REG_SET (set, i);
 }
 
@@ -1415,9 +1399,9 @@ life_analysis_1 (f, nregs)
      Reload will make some registers as live even though they do not appear
      in the rtl.  */
   if (reload_completed)
-    bcopy (regs_ever_live, save_regs_ever_live, (sizeof (regs_ever_live)));
+    copy_memory (regs_ever_live, save_regs_ever_live, (sizeof (regs_ever_live)));
 
-  bzero (regs_ever_live, sizeof regs_ever_live);
+  zero_memory (regs_ever_live, sizeof regs_ever_live);
 
   /* Allocate and zero out many data structures
      that will record the data from lifetime analysis.  */
@@ -1425,7 +1409,7 @@ life_analysis_1 (f, nregs)
   allocate_for_life_analysis ();
 
   reg_next_use = (rtx *) alloca (nregs * sizeof (rtx));
-  bzero ((char *) reg_next_use, nregs * sizeof (rtx));
+  zero_memory ((char *) reg_next_use, nregs * sizeof (rtx));
 
   /* Set up several regset-vectors used internally within this function.
      Their meanings are documented above, with their declarations.  */
@@ -1634,7 +1618,7 @@ life_analysis_1 (f, nregs)
 
   /* Restore regs_ever_live that was provided by reload.  */
   if (reload_completed)
-    bcopy (save_regs_ever_live, regs_ever_live, (sizeof (regs_ever_live)));
+    copy_memory (save_regs_ever_live, regs_ever_live, (sizeof (regs_ever_live)));
 
   free_regset_vector (basic_block_live_at_end, n_basic_blocks);
   free_regset_vector (basic_block_new_live_at_end, n_basic_blocks);
@@ -1643,7 +1627,7 @@ life_analysis_1 (f, nregs)
   basic_block_new_live_at_end = (regset *)0;
   basic_block_significant = (regset *)0;
 
-  obstack_free (&flow_obstack, NULL_PTR);
+  obstack_free (&flow_obstack, NULL);
 }
 
 /* Subroutines of life analysis.  */
@@ -2082,15 +2066,10 @@ insn_dead_p (x, needed, call_ok, notes)
 	  if ((regno < FIRST_PSEUDO_REGISTER && global_regs[regno])
 	      /* Make sure insns to set frame pointer aren't deleted.  */
 	      || regno == FRAME_POINTER_REGNUM
-#if FRAME_POINTER_REGNUM != HARD_FRAME_POINTER_REGNUM
-	      || regno == HARD_FRAME_POINTER_REGNUM
-#endif
-#if FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM
 	      /* Make sure insns to set arg pointer are never deleted
 		 (if the arg pointer isn't fixed, there will be a USE for
 		 it, so we can treat it normally).  */
 	      || (regno == ARG_POINTER_REGNUM && fixed_regs[regno])
-#endif
 	      || REGNO_REG_SET_P (needed, regno))
 	    return 0;
 
@@ -2390,12 +2369,7 @@ mark_set_1 (needed, dead, x, insn, significant)
 
   if (GET_CODE (reg) == REG
       && (regno = REGNO (reg), regno != FRAME_POINTER_REGNUM)
-#if FRAME_POINTER_REGNUM != HARD_FRAME_POINTER_REGNUM
-      && regno != HARD_FRAME_POINTER_REGNUM
-#endif
-#if FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM
       && ! (regno == ARG_POINTER_REGNUM && fixed_regs[regno])
-#endif
       && ! (regno < FIRST_PSEUDO_REGISTER && global_regs[regno]))
     /* && regno != STACK_POINTER_REGNUM) -- let's try without this.  */
     {
@@ -2853,12 +2827,7 @@ mark_used_regs (needed, live, x, final, insn)
 	    /* For stack ptr or fixed arg pointer,
 	       nothing below can be necessary, so waste no more time.  */
 	    if (regno == STACK_POINTER_REGNUM
-#if FRAME_POINTER_REGNUM != HARD_FRAME_POINTER_REGNUM
-		|| regno == HARD_FRAME_POINTER_REGNUM
-#endif
-#if FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM
 		|| (regno == ARG_POINTER_REGNUM && fixed_regs[regno])
-#endif
 		|| regno == FRAME_POINTER_REGNUM)
 	      {
 		/* If this is a register we are going to try to eliminate,
@@ -3036,12 +3005,7 @@ mark_used_regs (needed, live, x, final, insn)
 	     && GET_MODE (testreg) == BLKmode)
 	    || (GET_CODE (testreg) == REG
 		&& (regno = REGNO (testreg), regno != FRAME_POINTER_REGNUM)
-#if FRAME_POINTER_REGNUM != HARD_FRAME_POINTER_REGNUM
-		&& regno != HARD_FRAME_POINTER_REGNUM
-#endif
-#if FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM
 		&& ! (regno == ARG_POINTER_REGNUM && fixed_regs[regno])
-#endif
 		))
 	  /* We used to exclude global_regs here, but that seems wrong.
 	     Storing in them is like storing in mem.  */
@@ -3055,25 +3019,12 @@ mark_used_regs (needed, live, x, final, insn)
       break;
 
     case RETURN:
-      /* If exiting needs the right stack value, consider this insn as
-	 using the stack pointer.  In any event, consider it as using
-	 all global registers and all registers used by return.  */
-
-#ifdef EXIT_IGNORE_STACK
-      if (! EXIT_IGNORE_STACK
-	  || (! FRAME_POINTER_REQUIRED
-	      && ! current_function_calls_alloca
-	      && flag_omit_frame_pointer)
-	  || current_function_sp_is_unchanging)
-#endif
+      /* Consider this insn as using the stack pointer, all global registers
+         and all registers used by return.  */
 	SET_REGNO_REG_SET (live, STACK_POINTER_REGNUM);
 
       for (i = 0; i < FIRST_PSEUDO_REGISTER; i++)
-	if (global_regs[i]
-#ifdef EPILOGUE_USES
-	    || EPILOGUE_USES (i)
-#endif
-	    )
+	if (global_regs[i])
 	  SET_REGNO_REG_SET (live, i);
       break;
 
@@ -3570,10 +3521,10 @@ compute_preds_succs (s_preds, s_succs, num_preds, num_succs, split_edges)
   int bb;
   int changed = 0;
 
-  bzero ((char *) s_preds, n_basic_blocks * sizeof (int_list_ptr));
-  bzero ((char *) s_succs, n_basic_blocks * sizeof (int_list_ptr));
-  bzero ((char *) num_preds, n_basic_blocks * sizeof (int));
-  bzero ((char *) num_succs, n_basic_blocks * sizeof (int));
+  zero_memory ((char *) s_preds, n_basic_blocks * sizeof (int_list_ptr));
+  zero_memory ((char *) s_succs, n_basic_blocks * sizeof (int_list_ptr));
+  zero_memory ((char *) num_preds, n_basic_blocks * sizeof (int));
+  zero_memory ((char *) num_succs, n_basic_blocks * sizeof (int));
 
   /* It's somewhat stupid to simply copy the information.  The passes
      which use this function ought to be changed to refer directly to
@@ -3611,7 +3562,7 @@ compute_preds_succs (s_preds, s_succs, num_preds, num_succs, split_edges)
 	 to any given block from being split.  */
       char *split_edge_to_block = (char *) alloca (n_basic_blocks);
 
-      bzero (split_edge_to_block, n_basic_blocks);
+      zero_memory (split_edge_to_block, n_basic_blocks);
 
       for (bb = 0; bb < n_basic_blocks; bb++)
 	{

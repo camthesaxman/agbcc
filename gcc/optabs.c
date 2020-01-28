@@ -116,11 +116,8 @@ rtx truncxfdf2_libfunc;
 rtx trunctfdf2_libfunc;
 
 rtx memcpy_libfunc;
-rtx bcopy_libfunc;
 rtx memcmp_libfunc;
-rtx bcmp_libfunc;
 rtx memset_libfunc;
-rtx bzero_libfunc;
 
 rtx throw_libfunc;
 rtx rethrow_libfunc;
@@ -243,20 +240,20 @@ enum insn_code setcc_gen_code[NUM_RTX_CODE];
 enum insn_code movcc_gen_code[NUM_MACHINE_MODES];
 #endif
 
-static int add_equal_note	PROTO((rtx, rtx, enum rtx_code, rtx, rtx));
-static rtx widen_operand	PROTO((rtx, enum machine_mode,
-				       enum machine_mode, int, int));
-static enum insn_code can_fix_p	PROTO((enum machine_mode, enum machine_mode,
-				       int, int *));
-static enum insn_code can_float_p PROTO((enum machine_mode, enum machine_mode,
-					 int));
-static rtx ftruncify	PROTO((rtx));
-static optab init_optab	PROTO((enum rtx_code));
-static void init_libfuncs PROTO((optab, int, int, char *, int));
-static void init_integral_libfuncs PROTO((optab, char *, int));
-static void init_floating_libfuncs PROTO((optab, char *, int));
+static int add_equal_note	(rtx, rtx, enum rtx_code, rtx, rtx);
+static rtx widen_operand	(rtx, enum machine_mode,
+				       enum machine_mode, int, int);
+static enum insn_code can_fix_p	(enum machine_mode, enum machine_mode,
+				       int, int *);
+static enum insn_code can_float_p (enum machine_mode, enum machine_mode,
+					 int);
+static rtx ftruncify	(rtx);
+static optab init_optab	(enum rtx_code);
+static void init_libfuncs (optab, int, int, char *, int);
+static void init_integral_libfuncs (optab, char *, int);
+static void init_floating_libfuncs (optab, char *, int);
 #ifdef HAVE_conditional_trap
-static void init_traps PROTO((void));
+static void init_traps (void);
 #endif
 
 /* Add a REG_EQUAL note to the last insn in SEQ.  TARGET is being set to
@@ -679,7 +676,7 @@ expand_binop (mode, binoptab, op0, op1, target, unsignedp, methods)
 	 WORDS_BIG_ENDIAN.  */
 
       left_shift = binoptab == ashl_optab;
-      outof_word = left_shift ^ ! WORDS_BIG_ENDIAN;
+      outof_word = left_shift ^ 1;
 
       outof_target = operand_subword (target, outof_word, 1, mode);
       into_target = operand_subword (target, 1 - outof_word, 1, mode);
@@ -797,7 +794,7 @@ expand_binop (mode, binoptab, op0, op1, target, unsignedp, methods)
 	 WORDS_BIG_ENDIAN.  */
 
       left_shift = (binoptab == rotl_optab);
-      outof_word = left_shift ^ ! WORDS_BIG_ENDIAN;
+      outof_word = left_shift ^ 1;
 
       outof_target = operand_subword (target, outof_word, 1, mode);
       into_target = operand_subword (target, 1 - outof_word, 1, mode);
@@ -927,7 +924,7 @@ expand_binop (mode, binoptab, op0, op1, target, unsignedp, methods)
       /* Do the actual arithmetic.  */
       for (i = 0; i < nwords; i++)
 	{
-	  int index = (WORDS_BIG_ENDIAN ? nwords - i - 1 : i);
+	  int index = i;
 	  rtx target_piece = operand_subword (target, index, 1, mode);
 	  rtx op0_piece = operand_subword_force (xop0, index, mode);
 	  rtx op1_piece = operand_subword_force (xop1, index, mode);
@@ -1064,8 +1061,8 @@ expand_binop (mode, binoptab, op0, op1, target, unsignedp, methods)
 	  || (smul_widen_optab->handlers[(int) mode].insn_code
 	      != CODE_FOR_nothing)))
     {
-      int low = (WORDS_BIG_ENDIAN ? 1 : 0);
-      int high = (WORDS_BIG_ENDIAN ? 0 : 1);
+      int low = 0;
+      int high = 1;
       rtx op0_high = operand_subword_force (op0, high, mode);
       rtx op0_low = operand_subword_force (op0, low, mode);
       rtx op1_high = operand_subword_force (op1, high, mode);
@@ -2809,22 +2806,12 @@ emit_cmp_insn (x, y, comparison, size, mode, unsignedp, align)
 	{
 	  rtx result;
 
-#ifdef TARGET_MEM_FUNCTIONS
 	  emit_library_call (memcmp_libfunc, 0,
 			     TYPE_MODE (integer_type_node), 3,
 			     XEXP (x, 0), Pmode, XEXP (y, 0), Pmode,
 			     convert_to_mode (TYPE_MODE (sizetype), size,
 					      TREE_UNSIGNED (sizetype)),
 			     TYPE_MODE (sizetype));
-#else
-	  emit_library_call (bcmp_libfunc, 0,
-			     TYPE_MODE (integer_type_node), 3,
-			     XEXP (x, 0), Pmode, XEXP (y, 0), Pmode,
-			     convert_to_mode (TYPE_MODE (integer_type_node),
-					      size,
-					      TREE_UNSIGNED (integer_type_node)),
-			     TYPE_MODE (integer_type_node));
-#endif
 
 	  /* Immediately move the result of the libcall into a pseudo
 	     register so reload doesn't clobber the value if it needs
@@ -3015,37 +3002,7 @@ emit_float_lib_cmp (x, y, comparison)
   rtx libfunc = 0;
   rtx result;
 
-  if (mode == HFmode)
-    switch (comparison)
-      {
-      case EQ:
-	libfunc = eqhf2_libfunc;
-	break;
-
-      case NE:
-	libfunc = nehf2_libfunc;
-	break;
-
-      case GT:
-	libfunc = gthf2_libfunc;
-	break;
-
-      case GE:
-	libfunc = gehf2_libfunc;
-	break;
-
-      case LT:
-	libfunc = lthf2_libfunc;
-	break;
-
-      case LE:
-	libfunc = lehf2_libfunc;
-	break;
-
-      default:
-	break;
-      }
-  else if (mode == SFmode)
+  if (mode == SFmode)
     switch (comparison)
       {
       case EQ:
@@ -3100,66 +3057,6 @@ emit_float_lib_cmp (x, y, comparison)
 
       case LE:
 	libfunc = ledf2_libfunc;
-	break;
-
-      default:
-	break;
-      }
-  else if (mode == XFmode)
-    switch (comparison)
-      {
-      case EQ:
-	libfunc = eqxf2_libfunc;
-	break;
-
-      case NE:
-	libfunc = nexf2_libfunc;
-	break;
-
-      case GT:
-	libfunc = gtxf2_libfunc;
-	break;
-
-      case GE:
-	libfunc = gexf2_libfunc;
-	break;
-
-      case LT:
-	libfunc = ltxf2_libfunc;
-	break;
-
-      case LE:
-	libfunc = lexf2_libfunc;
-	break;
-
-      default:
-	break;
-      }
-  else if (mode == TFmode)
-    switch (comparison)
-      {
-      case EQ:
-	libfunc = eqtf2_libfunc;
-	break;
-
-      case NE:
-	libfunc = netf2_libfunc;
-	break;
-
-      case GT:
-	libfunc = gttf2_libfunc;
-	break;
-
-      case GE:
-	libfunc = getf2_libfunc;
-	break;
-
-      case LT:
-	libfunc = lttf2_libfunc;
-	break;
-
-      case LE:
-	libfunc = letf2_libfunc;
 	break;
 
       default:
@@ -3725,7 +3622,7 @@ expand_float (to, from, unsignedp)
 #endif
 
   /* No hardware instruction available; call a library routine to convert from
-     SImode, DImode, or TImode into SFmode, DFmode, XFmode, or TFmode.  */
+     SImode or DImode into SFmode or DFmode.  */
     {
       rtx libfcn;
       rtx insns;
@@ -3746,8 +3643,6 @@ expand_float (to, from, unsignedp)
 	    libfcn = floatsisf_libfunc;
 	  else if (GET_MODE (from) == DImode)
 	    libfcn = floatdisf_libfunc;
-	  else if (GET_MODE (from) == TImode)
-	    libfcn = floattisf_libfunc;
 	  else
 	    abort ();
 	}
@@ -3757,30 +3652,6 @@ expand_float (to, from, unsignedp)
 	    libfcn = floatsidf_libfunc;
 	  else if (GET_MODE (from) == DImode)
 	    libfcn = floatdidf_libfunc;
-	  else if (GET_MODE (from) == TImode)
-	    libfcn = floattidf_libfunc;
-	  else
-	    abort ();
-	}
-      else if (GET_MODE (to) == XFmode)
-	{
-	  if (GET_MODE (from) == SImode)
-	    libfcn = floatsixf_libfunc;
-	  else if (GET_MODE (from) == DImode)
-	    libfcn = floatdixf_libfunc;
-	  else if (GET_MODE (from) == TImode)
-	    libfcn = floattixf_libfunc;
-	  else
-	    abort ();
-	}
-      else if (GET_MODE (to) == TFmode)
-	{
-	  if (GET_MODE (from) == SImode)
-	    libfcn = floatsitf_libfunc;
-	  else if (GET_MODE (from) == DImode)
-	    libfcn = floatditf_libfunc;
-	  else if (GET_MODE (from) == TImode)
-	    libfcn = floattitf_libfunc;
 	  else
 	    abort ();
 	}
@@ -3969,8 +3840,6 @@ expand_fix (to, from, unsignedp)
 	libfcn = unsignedp ? fixunssfsi_libfunc : fixsfsi_libfunc;
       else if (GET_MODE (to) == DImode)
 	libfcn = unsignedp ? fixunssfdi_libfunc : fixsfdi_libfunc;
-      else if (GET_MODE (to) == TImode)
-	libfcn = unsignedp ? fixunssfti_libfunc : fixsfti_libfunc;
       else
 	abort ();
     }
@@ -3980,30 +3849,6 @@ expand_fix (to, from, unsignedp)
 	libfcn = unsignedp ? fixunsdfsi_libfunc : fixdfsi_libfunc;
       else if (GET_MODE (to) == DImode)
 	libfcn = unsignedp ? fixunsdfdi_libfunc : fixdfdi_libfunc;
-      else if (GET_MODE (to) == TImode)
-	libfcn = unsignedp ? fixunsdfti_libfunc : fixdfti_libfunc;
-      else
-	abort ();
-    }
-  else if (GET_MODE (from) == XFmode)
-    {
-      if (GET_MODE (to) == SImode)
-	libfcn = unsignedp ? fixunsxfsi_libfunc : fixxfsi_libfunc;
-      else if (GET_MODE (to) == DImode)
-	libfcn = unsignedp ? fixunsxfdi_libfunc : fixxfdi_libfunc;
-      else if (GET_MODE (to) == TImode)
-	libfcn = unsignedp ? fixunsxfti_libfunc : fixxfti_libfunc;
-      else
-	abort ();
-    }
-  else if (GET_MODE (from) == TFmode)
-    {
-      if (GET_MODE (to) == SImode)
-	libfcn = unsignedp ? fixunstfsi_libfunc : fixtfsi_libfunc;
-      else if (GET_MODE (to) == DImode)
-	libfcn = unsignedp ? fixunstfdi_libfunc : fixtfdi_libfunc;
-      else if (GET_MODE (to) == TImode)
-	libfcn = unsignedp ? fixunstfti_libfunc : fixtfti_libfunc;
       else
 	abort ();
     }
@@ -4125,7 +3970,7 @@ init_integral_libfuncs (optable, opname, suffix)
     register char *opname;
     register int suffix;
 {
-  init_libfuncs (optable, SImode, TImode, opname, suffix);
+  init_libfuncs (optable, SImode, DImode, opname, suffix);
 }
 
 /* Initialize the libfunc fields of an entire group of entries in some
@@ -4139,7 +3984,7 @@ init_floating_libfuncs (optable, opname, suffix)
     register char *opname;
     register int suffix;
 {
-  init_libfuncs (optable, SFmode, TFmode, opname, suffix);
+  init_libfuncs (optable, SFmode, DFmode, opname, suffix);
 }
 
 
@@ -4150,9 +3995,6 @@ void
 init_optabs ()
 {
   int i;
-#ifdef FIXUNS_TRUNC_LIKE_FIX_TRUNC
-  int j;
-#endif
 
   enum insn_code *p;
 
@@ -4242,14 +4084,6 @@ init_optabs ()
 
   /* Fill in the optabs with the insns we support.  */
   init_all_optabs ();
-
-#ifdef FIXUNS_TRUNC_LIKE_FIX_TRUNC
-  /* This flag says the same insns that convert to a signed fixnum
-     also convert validly to an unsigned one.  */
-  for (i = 0; i < NUM_MACHINE_MODES; i++)
-    for (j = 0; j < NUM_MACHINE_MODES; j++)
-      fixtrunctab[i][j][1] = fixtrunctab[i][j][0];
-#endif
 
 #ifdef EXTRA_CC_MODES
   init_mov_optab ();
@@ -4365,11 +4199,8 @@ init_optabs ()
   trunctfdf2_libfunc = gen_rtx_SYMBOL_REF (Pmode, "__trunctfdf2");
 
   memcpy_libfunc = gen_rtx_SYMBOL_REF (Pmode, "memcpy");
-  bcopy_libfunc = gen_rtx_SYMBOL_REF (Pmode, "bcopy");
   memcmp_libfunc = gen_rtx_SYMBOL_REF (Pmode, "memcmp");
-  bcmp_libfunc = gen_rtx_SYMBOL_REF (Pmode, "__gcc_bcmp");
   memset_libfunc = gen_rtx_SYMBOL_REF (Pmode, "memset");
-  bzero_libfunc = gen_rtx_SYMBOL_REF (Pmode, "bzero");
 
   throw_libfunc = gen_rtx_SYMBOL_REF (Pmode, "__throw");
   rethrow_libfunc = gen_rtx_SYMBOL_REF (Pmode, "__rethrow");

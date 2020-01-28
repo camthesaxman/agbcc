@@ -45,10 +45,6 @@ enum debug_info_level
 /* Specify how much debugging info to generate.  */
 extern enum debug_info_level debug_info_level;
 
-/* Nonzero means use GNU-only extensions in the generated symbolic
-   debugging information.  */
-extern int use_gnu_debug_info_extensions;
-
 /* Nonzero means do optimizations.  -opt.  */
 
 extern int optimize;
@@ -61,11 +57,6 @@ extern int optimize_size;
    Currently, this is 1 if `optimize' is 0.  */
 
 extern int obey_regdecls;
-
-/* Don't print functions as they are compiled and don't print
-   times taken by the various passes.  -quiet.  */
-
-extern int quiet_flag;
 
 /* Don't print warning messages.  -w.  */
 
@@ -86,14 +77,6 @@ extern int warn_inline;
 /* Nonzero to warn about variables used before they are initialized.  */
 
 extern int warn_uninitialized;
-
-/* Zero if unknown pragmas are ignored
-   One if the compiler should warn about an unknown pragma not in
-   a system include file.
-   Greater than one if the compiler should warn for all unknown
-   pragmas.  */
-
-extern int warn_unknown_pragmas;
 
 /* Nonzero means warn about all declarations which shadow others.   */
 
@@ -173,10 +156,6 @@ extern int in_system_header;
 extern int flag_print_asm_name;
 
 /* Now the symbols that are set with `-f' switches.  */
-
-/* Nonzero means `char' should be signed.  */
-
-extern int flag_signed_char;
 
 /* Nonzero means give an enum type only as many bytes as it needs.  */
 
@@ -318,35 +297,6 @@ extern int flag_syntax_only;
 
 extern int flag_gen_aux_info;
 
-/* Nonzero means make the text shared if supported.  */
-
-extern int flag_shared_data;
-
-/* flag_schedule_insns means schedule insns within basic blocks (before
-   local_alloc).
-   flag_schedule_insns_after_reload means schedule insns after
-   global_alloc.  */
-
-extern int flag_schedule_insns;
-extern int flag_schedule_insns_after_reload;
-
-#ifdef HAIFA
-/* The following flags have effect only for scheduling before register
-   allocation:
-
-   flag_schedule_interblock means schedule insns accross basic blocks.
-   flag_schedule_speculative means allow speculative motion of non-load insns.
-   flag_schedule_speculative_load means allow speculative motion of some
-   load insns.
-   flag_schedule_speculative_load_dangerous allows speculative motion of more
-   load insns.  */
-
-extern int flag_schedule_interblock;
-extern int flag_schedule_speculative;
-extern int flag_schedule_speculative_load;
-extern int flag_schedule_speculative_load_dangerous;
-#endif  /* HAIFA */
-
 /* flag_on_branch_count_reg means try to replace add-1,compare,branch tupple
    by a cheaper branch, on a count register. */
 extern int flag_branch_on_count_reg;
@@ -355,10 +305,6 @@ extern int flag_branch_on_count_reg;
 /* CYGNUS LOCAL meissner/nortel */
 extern int flag_optimize_comparisons;
 /* END CYGNUS LOCAL meissner/nortel */
-
-/* Nonzero means put things in delayed-branch slots if supported. */
-
-extern int flag_delayed_branch;
 
 /* Nonzero means suppress output of instruction numbers and line number
    notes in debugging dumps.  */
@@ -375,11 +321,6 @@ extern int flag_pretend_float;
    Usually these are warnings about failure to conform to some standard.  */
 
 extern int flag_pedantic_errors;
-
-/* Nonzero means generate position-independent code.
-   This is not fully implemented yet.  */
-
-extern int flag_pic;
 
 /* Nonzero means generate extra code for exception handling and enable
    exception handling.  */
@@ -429,10 +370,6 @@ extern int flag_verbose_asm;
 
 extern int flag_debug_asm;
 
-/* -fgnu-linker specifies use of the GNU linker for initializations.
-   -fno-gnu-linker says that collect will be used.  */
-extern int flag_gnu_linker;
-
 /* CYGNUS LOCAL unaligned-struct-hack */
 /* This is a hack.  Disable the effect of SLOW_BYTE_ACCESS, so that references
    to aligned fields inside of unaligned structures can work.  That is, we
@@ -449,17 +386,6 @@ extern int flag_unaligned_struct_hack;
 
 extern int flag_unaligned_pointers;
 /* END CYGNUS LOCAL */
-
-/* CYGNUS LOCAL LRS */
-/* Enable live range splitting.  */
-extern int flag_live_range;
-
-/* Enable/disable using GDB extensions for denoting live ranges.  */
-extern int flag_live_range_gdb;
-
-/* Create scoping blocks for live ranges when debugging.  */
-extern int flag_live_range_scope;
-/* END CYGNUS LOCAL LRS */
 
 /* Tag all structures with __attribute__(packed) */
 extern int flag_pack_struct;
@@ -488,7 +414,7 @@ extern int flag_regmove;
 
 /* Instrument functions with calls at entry and exit, for profiling.  */
 extern int flag_instrument_function_entry_exit;
-
+
 /* Other basic status info about current function.  */
 
 /* Nonzero means current function must be given a frame pointer.
@@ -531,10 +457,6 @@ extern int flag_prefix_function_name;
    corners where we can.  */
 extern int current_function_is_thunk;
 
-/* Value of the -G xx switch, and whether it was passed or not.  */
-extern int g_switch_value;
-extern int g_switch_set;
-
 /* Nonzero if we dump in VCG format, not plain text.  */
 extern int dump_for_graph;
 
@@ -545,3 +467,6 @@ enum graph_dump_types
   vcg
 };
 extern enum graph_dump_types graph_dump_format;
+
+/* Nonzero if ASM output should use hex instead of decimal.  */
+extern int flag_hex_asm;

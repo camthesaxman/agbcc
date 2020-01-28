@@ -59,32 +59,32 @@ extern struct obstack *function_maybepermanent_obstack;
    : (8 * (8 + list_length (DECL_ARGUMENTS (DECL)))))
 #endif
 
-static rtx initialize_for_inline	PROTO((tree, int, int, int, int));
-static void finish_inline		PROTO((tree, rtx));
-static void adjust_copied_decl_tree	PROTO((tree));
-static tree copy_decl_list		PROTO((tree));
-static tree copy_decl_tree		PROTO((tree));
-static void copy_decl_rtls		PROTO((tree));
-static void save_constants		PROTO((rtx *));
-static void note_modified_parmregs	PROTO((rtx, rtx));
-static rtx copy_for_inline		PROTO((rtx));
-static void integrate_parm_decls	PROTO((tree, struct inline_remap *,
-					       rtvec));
-static void integrate_decl_tree		PROTO((tree, int,
-					       struct inline_remap *));
-static void save_constants_in_decl_trees PROTO ((tree));
-static void subst_constants		PROTO((rtx *, rtx,
-					       struct inline_remap *));
-static void restore_constants		PROTO((rtx *));
-static void set_block_origin_self	PROTO((tree));
-static void set_decl_origin_self	PROTO((tree));
-static void set_block_abstract_flags	PROTO((tree, int));
-static void process_reg_param		PROTO((struct inline_remap *, rtx,
-					       rtx));
+static rtx initialize_for_inline	(tree, int, int, int, int);
+static void finish_inline		(tree, rtx);
+static void adjust_copied_decl_tree	(tree);
+static tree copy_decl_list		(tree);
+static tree copy_decl_tree		(tree);
+static void copy_decl_rtls		(tree);
+static void save_constants		(rtx *);
+static void note_modified_parmregs	(rtx, rtx);
+static rtx copy_for_inline		(rtx);
+static void integrate_parm_decls	(tree, struct inline_remap *,
+					       rtvec);
+static void integrate_decl_tree		(tree, int,
+					       struct inline_remap *);
+static void save_constants_in_decl_trees (tree);
+static void subst_constants		(rtx *, rtx,
+					       struct inline_remap *);
+static void restore_constants		(rtx *);
+static void set_block_origin_self	(tree);
+static void set_decl_origin_self	(tree);
+static void set_block_abstract_flags	(tree, int);
+static void process_reg_param		(struct inline_remap *, rtx,
+					       rtx);
 
 
-void set_decl_abstract_flags		PROTO((tree, int));
-static tree copy_and_set_decl_abstract_origin PROTO((tree));
+void set_decl_abstract_flags		(tree, int);
+static tree copy_and_set_decl_abstract_origin (tree);
 
 /* Returns the Ith entry in the label_map contained in MAP.  If the
    Ith entry has not yet been set, return a fresh label.  This function
@@ -296,11 +296,10 @@ initialize_for_inline (fndecl, min_labelno, max_labelno, max_reg, copy)
        + current_function_needs_context * FUNCTION_FLAGS_NEEDS_CONTEXT
        + current_function_has_nonlocal_label * FUNCTION_FLAGS_HAS_NONLOCAL_LABEL
        + current_function_returns_pointer * FUNCTION_FLAGS_RETURNS_POINTER
-       + current_function_uses_const_pool * FUNCTION_FLAGS_USES_CONST_POOL
-       + current_function_uses_pic_offset_table * FUNCTION_FLAGS_USES_PIC_OFFSET_TABLE);
+       + current_function_uses_const_pool * FUNCTION_FLAGS_USES_CONST_POOL);
 
   /* Clear out PARMDECL_MAP.  It was allocated in the caller's frame.  */
-  bzero ((char *) parmdecl_map, max_parm_reg * sizeof (tree));
+  zero_memory ((char *) parmdecl_map, max_parm_reg * sizeof (tree));
   arg_vector = rtvec_alloc (list_length (DECL_ARGUMENTS (fndecl)));
 
   for (parms = DECL_ARGUMENTS (fndecl), i = 0;
@@ -589,7 +588,7 @@ save_for_inline_copying (fndecl)
   /* Record the mapping of old insns to copied insns.  */
 
   insn_map = (rtx *) alloca (max_uid * sizeof (rtx));
-  bzero ((char *) insn_map, max_uid * sizeof (rtx));
+  zero_memory ((char *) insn_map, max_uid * sizeof (rtx));
 
   /* Get the insn which signals the end of parameter setup code.  */
   first_nonparm_insn = get_first_nonparm_insn ();
@@ -607,7 +606,7 @@ save_for_inline_copying (fndecl)
   /* Copy the parm_reg_stack_loc array, and substitute for all of the rtx
      contained in it.  */
   new2 = (rtx *) savealloc (max_parm_reg * sizeof (rtx));
-  bcopy ((char *) parm_reg_stack_loc, (char *) new2,
+  copy_memory ((char *) parm_reg_stack_loc, (char *) new2,
 	 max_parm_reg * sizeof (rtx));
   parm_reg_stack_loc = new2;
   for (i = LAST_VIRTUAL_REGISTER + 1; i < max_parm_reg; ++i)
@@ -732,9 +731,9 @@ save_for_inline_copying (fndecl)
 
   /* Make new versions of the register tables.  */
   new = (char *) savealloc (regno_pointer_flag_length);
-  bcopy (regno_pointer_flag, new, regno_pointer_flag_length);
+  copy_memory (regno_pointer_flag, new, regno_pointer_flag_length);
   new1 = (char *) savealloc (regno_pointer_flag_length);
-  bcopy (regno_pointer_align, new1, regno_pointer_flag_length);
+  copy_memory (regno_pointer_align, new1, regno_pointer_flag_length);
 
   regno_pointer_flag = new;
   regno_pointer_align = new1;
@@ -1219,22 +1218,6 @@ copy_for_inline (orig)
       }
       break;
 
-#if 0 /* This is a good idea, but here is the wrong place for it.  */
-      /* Arrange that CONST_INTs always appear as the second operand
-	 if they appear, and that `frame_pointer_rtx' or `arg_pointer_rtx'
-	 always appear as the first.  */
-    case PLUS:
-      if (GET_CODE (XEXP (x, 0)) == CONST_INT
-	  || (XEXP (x, 1) == frame_pointer_rtx
-	      || (ARG_POINTER_REGNUM != FRAME_POINTER_REGNUM
-		  && XEXP (x, 1) == arg_pointer_rtx)))
-	{
-	  rtx t = XEXP (x, 0);
-	  XEXP (x, 0) = XEXP (x, 1);
-	  XEXP (x, 1) = t;
-	}
-      break;
-#endif
     default:
       break;
     }
@@ -1242,7 +1225,7 @@ copy_for_inline (orig)
   /* Replace this rtx with a copy of itself.  */
 
   x = rtx_alloc (code);
-  bcopy ((char *) orig, (char *) x,
+  copy_memory ((char *) orig, (char *) x,
 	 (sizeof (*x) - sizeof (x->fld)
 	  + sizeof (x->fld[0]) * GET_RTX_LENGTH (code)));
 
@@ -1532,7 +1515,7 @@ expand_inline_function (fndecl, parms, target, ignore, type,
   map->fndecl = fndecl;
 
   map->reg_map = (rtx *) alloca (max_regno * sizeof (rtx));
-  bzero ((char *) map->reg_map, max_regno * sizeof (rtx));
+  zero_memory ((char *) map->reg_map, max_regno * sizeof (rtx));
 
   /* We used to use alloca here, but the size of what it would try to
      allocate would occasionally cause it to exceed the stack limit and
@@ -1542,7 +1525,7 @@ expand_inline_function (fndecl, parms, target, ignore, type,
   map->label_map = real_label_map;
 
   map->insn_map = (rtx *) alloca (INSN_UID (header) * sizeof (rtx));
-  bzero ((char *) map->insn_map, INSN_UID (header) * sizeof (rtx));
+  zero_memory ((char *) map->insn_map, INSN_UID (header) * sizeof (rtx));
   map->min_insnno = 0;
   map->max_insnno = INSN_UID (header);
 
@@ -1565,12 +1548,12 @@ expand_inline_function (fndecl, parms, target, ignore, type,
 
   map->const_equiv_map
     = (rtx *)alloca (map->const_equiv_map_size * sizeof (rtx));
-  bzero ((char *) map->const_equiv_map,
+  zero_memory ((char *) map->const_equiv_map,
 	 map->const_equiv_map_size * sizeof (rtx));
 
   map->const_age_map
     = (unsigned *)alloca (map->const_equiv_map_size * sizeof (unsigned));
-  bzero ((char *) map->const_age_map,
+  zero_memory ((char *) map->const_age_map,
 	 map->const_equiv_map_size * sizeof (unsigned));
   map->const_age = 0;
 
@@ -1579,7 +1562,7 @@ expand_inline_function (fndecl, parms, target, ignore, type,
      insn that can be used as an insertion point.  */
   map->insns_at_start = get_last_insn ();
   if (map->insns_at_start == 0)
-    map->insns_at_start = emit_note (NULL_PTR, NOTE_INSN_DELETED);
+    map->insns_at_start = emit_note (NULL, NOTE_INSN_DELETED);
 
   map->regno_pointer_flag = INLINE_REGNO_POINTER_FLAG (header);
   map->regno_pointer_align = INLINE_REGNO_POINTER_ALIGN (header);
@@ -1588,11 +1571,6 @@ expand_inline_function (fndecl, parms, target, ignore, type,
      function.  */
   if (OUTGOING_ARGS_SIZE (header) > current_function_outgoing_args_size)
     current_function_outgoing_args_size = OUTGOING_ARGS_SIZE (header);
-
-  /* If the inline function needs to make PIC references, that means
-     that this function's PIC offset table must be used.  */
-  if (FUNCTION_FLAGS (header) & FUNCTION_FLAGS_USES_PIC_OFFSET_TABLE)
-    current_function_uses_pic_offset_table = 1;
 
   /* If this function needs a context, set it up.  */
   if (FUNCTION_FLAGS (header) & FUNCTION_FLAGS_NEEDS_CONTEXT)
@@ -1834,7 +1812,7 @@ expand_inline_function (fndecl, parms, target, ignore, type,
 
   /* Initialize label_map.  get_label_from_map will actually make
      the labels.  */
-  bzero ((char *) &map->label_map [min_labelno],
+  zero_memory ((char *) &map->label_map [min_labelno],
 	 (max_labelno - min_labelno) * sizeof (rtx));
 
   /* Perform postincrements before actually calling the function.  */
@@ -3405,9 +3383,6 @@ output_inline_function (fndecl)
 
   if (FUNCTION_FLAGS (head) & FUNCTION_FLAGS_USES_CONST_POOL)
     current_function_uses_const_pool = 1;
-
-  if (FUNCTION_FLAGS (head) & FUNCTION_FLAGS_USES_PIC_OFFSET_TABLE)
-    current_function_uses_pic_offset_table = 1;
 
   current_function_outgoing_args_size = OUTGOING_ARGS_SIZE (head);
   current_function_pops_args = POPS_ARGS (head);

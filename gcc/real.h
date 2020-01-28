@@ -30,13 +30,9 @@ Boston, MA 02111-1307, USA.  */
 
 /* Default to IEEE float if not specified.  Nearly all machines use it.  */
 
-#ifndef TARGET_FLOAT_FORMAT
 #define	TARGET_FLOAT_FORMAT	IEEE_FLOAT_FORMAT
-#endif
 
-#ifndef HOST_FLOAT_FORMAT
 #define	HOST_FLOAT_FORMAT	IEEE_FLOAT_FORMAT
-#endif
 
 #if TARGET_FLOAT_FORMAT == IEEE_FLOAT_FORMAT
 #define REAL_INFINITY
@@ -64,100 +60,52 @@ Boston, MA 02111-1307, USA.  */
    that can produce a target machine format differing by more
    than just endian-ness from the host's format.  The emulator
    is also used to support extended real XFmode.  */
-#ifndef LONG_DOUBLE_TYPE_SIZE
 #define LONG_DOUBLE_TYPE_SIZE 64
-#endif
-#if (LONG_DOUBLE_TYPE_SIZE == 96) || (LONG_DOUBLE_TYPE_SIZE == 128)
-#ifndef REAL_ARITHMETIC
-#define REAL_ARITHMETIC
-#endif
-#endif
-#ifdef REAL_ARITHMETIC
+
 /* **** Start of software floating point emulator interface macros **** */
 
-/* Support 80-bit extended real XFmode if LONG_DOUBLE_TYPE_SIZE
-   has been defined to be 96 in the tm.h machine file. */
-#if (LONG_DOUBLE_TYPE_SIZE == 96)
-#define REAL_IS_NOT_DOUBLE
-#define REAL_ARITHMETIC
-typedef struct {
-  HOST_WIDE_INT r[(11 + sizeof (HOST_WIDE_INT))/(sizeof (HOST_WIDE_INT))];
-} realvaluetype;
-#define REAL_VALUE_TYPE realvaluetype
-
-#else /* no XFmode support */
-
-#if (LONG_DOUBLE_TYPE_SIZE == 128)
-
-#define REAL_IS_NOT_DOUBLE
-#define REAL_ARITHMETIC
-typedef struct {
-  HOST_WIDE_INT r[(19 + sizeof (HOST_WIDE_INT))/(sizeof (HOST_WIDE_INT))];
-} realvaluetype;
-#define REAL_VALUE_TYPE realvaluetype
-
-#else /* not TFmode */
-
-#if HOST_FLOAT_FORMAT != TARGET_FLOAT_FORMAT
-/* If no XFmode support, then a REAL_VALUE_TYPE is 64 bits wide
-   but it is not necessarily a host machine double. */
-#define REAL_IS_NOT_DOUBLE
-typedef struct {
-  HOST_WIDE_INT r[(7 + sizeof (HOST_WIDE_INT))/(sizeof (HOST_WIDE_INT))];
-} realvaluetype;
-#define REAL_VALUE_TYPE realvaluetype
-#else
-/* If host and target formats are compatible, then a REAL_VALUE_TYPE
-   is actually a host machine double. */
 #define REAL_VALUE_TYPE double
-#endif
 
-#endif /* no TFmode support */
-#endif /* no XFmode support */
-
-extern int significand_size	PROTO((enum machine_mode));
+extern int significand_size	(enum machine_mode);
 
 /* If emulation has been enabled by defining REAL_ARITHMETIC or by
    setting LONG_DOUBLE_TYPE_SIZE to 96 or 128, then define macros so that
    they invoke emulator functions. This will succeed only if the machine
    files have been updated to use these macros in place of any
    references to host machine `double' or `float' types.  */
-#ifdef REAL_ARITHMETIC
 #undef REAL_ARITHMETIC
 #define REAL_ARITHMETIC(value, code, d1, d2) \
   earith (&(value), (code), &(d1), &(d2))
 
 /* Declare functions in real.c. */
-extern void earith		PROTO((REAL_VALUE_TYPE *, int,
-				       REAL_VALUE_TYPE *, REAL_VALUE_TYPE *));
-extern REAL_VALUE_TYPE etrunci	PROTO((REAL_VALUE_TYPE));
-extern REAL_VALUE_TYPE etruncui	PROTO((REAL_VALUE_TYPE));
-extern REAL_VALUE_TYPE ereal_atof PROTO((char *, enum machine_mode));
-extern REAL_VALUE_TYPE ereal_negate PROTO((REAL_VALUE_TYPE));
-extern HOST_WIDE_INT efixi	PROTO((REAL_VALUE_TYPE));
-extern unsigned HOST_WIDE_INT efixui PROTO((REAL_VALUE_TYPE));
-extern void ereal_from_int	PROTO((REAL_VALUE_TYPE *,
+extern void earith		(REAL_VALUE_TYPE *, int,
+				       REAL_VALUE_TYPE *, REAL_VALUE_TYPE *);
+extern REAL_VALUE_TYPE etrunci	(REAL_VALUE_TYPE);
+extern REAL_VALUE_TYPE etruncui	(REAL_VALUE_TYPE);
+extern REAL_VALUE_TYPE ereal_atof (char *, enum machine_mode);
+extern REAL_VALUE_TYPE ereal_negate (REAL_VALUE_TYPE);
+extern HOST_WIDE_INT efixi	(REAL_VALUE_TYPE);
+extern HOST_WIDE_UINT efixui (REAL_VALUE_TYPE);
+extern void ereal_from_int	(REAL_VALUE_TYPE *,
 				       HOST_WIDE_INT, HOST_WIDE_INT,
-				       enum machine_mode));
-extern void ereal_from_uint	PROTO((REAL_VALUE_TYPE *,
-				       unsigned HOST_WIDE_INT,
-				       unsigned HOST_WIDE_INT,
-				       enum machine_mode));
-extern void ereal_to_int	PROTO((HOST_WIDE_INT *, HOST_WIDE_INT *,
-				       REAL_VALUE_TYPE));
-extern REAL_VALUE_TYPE ereal_ldexp PROTO((REAL_VALUE_TYPE, int));
+				       enum machine_mode);
+extern void ereal_from_uint	(REAL_VALUE_TYPE *,
+				       HOST_WIDE_UINT,
+				       HOST_WIDE_UINT,
+				       enum machine_mode);
+extern void ereal_to_int	(HOST_WIDE_INT *, HOST_WIDE_INT *,
+				       REAL_VALUE_TYPE);
+extern REAL_VALUE_TYPE ereal_ldexp (REAL_VALUE_TYPE, int);
 
-extern void etartdouble		PROTO((REAL_VALUE_TYPE, long *));
-extern void etarldouble		PROTO((REAL_VALUE_TYPE, long *));
-extern void etardouble		PROTO((REAL_VALUE_TYPE, long *));
-extern long etarsingle		PROTO((REAL_VALUE_TYPE));
-extern void ereal_to_decimal	PROTO((REAL_VALUE_TYPE, char *));
-extern int ereal_cmp		PROTO((REAL_VALUE_TYPE, REAL_VALUE_TYPE));
-extern int ereal_isneg		PROTO((REAL_VALUE_TYPE));
-extern REAL_VALUE_TYPE ereal_unto_float PROTO((long));
-extern REAL_VALUE_TYPE ereal_unto_double PROTO((long *));
-extern REAL_VALUE_TYPE ereal_from_float PROTO((HOST_WIDE_INT));
-extern REAL_VALUE_TYPE ereal_from_double PROTO((HOST_WIDE_INT *));
+extern void etardouble		(REAL_VALUE_TYPE, long *);
+extern long etarsingle		(REAL_VALUE_TYPE);
+extern void ereal_to_decimal	(REAL_VALUE_TYPE, char *);
+extern int ereal_cmp		(REAL_VALUE_TYPE, REAL_VALUE_TYPE);
+extern int ereal_isneg		(REAL_VALUE_TYPE);
+extern REAL_VALUE_TYPE ereal_unto_float (long);
+extern REAL_VALUE_TYPE ereal_unto_double (long *);
+extern REAL_VALUE_TYPE ereal_from_float (HOST_WIDE_INT);
+extern REAL_VALUE_TYPE ereal_from_double (HOST_WIDE_INT *);
 
 #define REAL_VALUES_EQUAL(x, y) (ereal_cmp ((x), (y)) == 0)
 /* true if x < y : */
@@ -167,8 +115,8 @@ extern REAL_VALUE_TYPE ereal_from_double PROTO((HOST_WIDE_INT *));
 /* These return REAL_VALUE_TYPE: */
 #define REAL_VALUE_RNDZINT(x) (etrunci (x))
 #define REAL_VALUE_UNSIGNED_RNDZINT(x) (etruncui (x))
-extern REAL_VALUE_TYPE real_value_truncate	PROTO ((enum machine_mode,
-							REAL_VALUE_TYPE));
+extern REAL_VALUE_TYPE real_value_truncate	(enum machine_mode,
+							REAL_VALUE_TYPE);
 #define REAL_VALUE_TRUNCATE(mode, x)  real_value_truncate (mode, x)
 
 /* These return HOST_WIDE_INT: */
@@ -198,11 +146,6 @@ extern REAL_VALUE_TYPE real_value_truncate	PROTO ((enum machine_mode,
   ereal_from_uint (&d, lo, hi, mode)
 
 /* IN is a REAL_VALUE_TYPE.  OUT is an array of longs. */
-#if LONG_DOUBLE_TYPE_SIZE == 96
-#define REAL_VALUE_TO_TARGET_LONG_DOUBLE(IN, OUT) (etarldouble ((IN), (OUT)))
-#else
-#define REAL_VALUE_TO_TARGET_LONG_DOUBLE(IN, OUT) (etartdouble ((IN), (OUT)))
-#endif
 #define REAL_VALUE_TO_TARGET_DOUBLE(IN, OUT) (etardouble ((IN), (OUT)))
 
 /* IN is a REAL_VALUE_TYPE.  OUT is a long. */
@@ -224,45 +167,7 @@ extern REAL_VALUE_TYPE real_value_truncate	PROTO ((enum machine_mode,
 /* Conversions to decimal ASCII string.  */
 #define REAL_VALUE_TO_DECIMAL(r, fmt, s) (ereal_to_decimal (r, s))
 
-#endif /* REAL_ARITHMETIC defined */
-
 /* **** End of software floating point emulator interface macros **** */
-#else /* No XFmode or TFmode and REAL_ARITHMETIC not defined */
-
-/* old interface */
-#ifdef REAL_ARITHMETIC
-/* Defining REAL_IS_NOT_DOUBLE breaks certain initializations
-   when REAL_ARITHMETIC etc. are not defined.  */
-
-/* Now see if the host and target machines use the same format. 
-   If not, define REAL_IS_NOT_DOUBLE (even if we end up representing
-   reals as doubles because we have no better way in this cross compiler.)
-   This turns off various optimizations that can happen when we know the
-   compiler's float format matches the target's float format.
-   */
-#if HOST_FLOAT_FORMAT != TARGET_FLOAT_FORMAT
-#define	REAL_IS_NOT_DOUBLE
-#ifndef REAL_VALUE_TYPE
-typedef struct {
-    HOST_WIDE_INT r[sizeof (double)/sizeof (HOST_WIDE_INT)];
-  } realvaluetype;
-#define REAL_VALUE_TYPE realvaluetype
-#endif /* no REAL_VALUE_TYPE */
-#endif /* formats differ */
-#endif /* 0 */
-
-#endif /* emulator not used */
-
-/* If we are not cross-compiling, use a `double' to represent the
-   floating-point value.  Otherwise, use some other type
-   (probably a struct containing an array of longs).  */
-#ifndef REAL_VALUE_TYPE
-#define REAL_VALUE_TYPE double
-#else
-#define REAL_IS_NOT_DOUBLE
-#endif
-
-#if HOST_FLOAT_FORMAT == TARGET_FLOAT_FORMAT
 
 /* Convert a type `double' value in host format first to a type `float'
    value in host format and then to a single type `long' value which
@@ -302,19 +207,13 @@ do {									\
     (OUT)[1] = u.l[0], (OUT)[0] = u.l[1];				\
 } while (0)
 #endif
-#endif /* HOST_FLOAT_FORMAT == TARGET_FLOAT_FORMAT */
-
-/* In this configuration, double and long double are the same. */
-#ifndef REAL_VALUE_TO_TARGET_LONG_DOUBLE
-#define REAL_VALUE_TO_TARGET_LONG_DOUBLE(a, b) REAL_VALUE_TO_TARGET_DOUBLE (a, b)
-#endif
 
 /* Compare two floating-point objects for bitwise identity.
    This is not the same as comparing for equality on IEEE hosts:
    -0.0 equals 0.0 but they are not identical, and conversely
    two NaNs might be identical but they cannot be equal.  */
 #define REAL_VALUES_IDENTICAL(x, y) \
-  (!bcmp ((char *) &(x), (char *) &(y), sizeof (REAL_VALUE_TYPE)))
+  (!memcmp ((char *) &(x), (char *) &(y), sizeof (REAL_VALUE_TYPE)))
 
 /* Compare two floating-point values for equality.  */
 #ifndef REAL_VALUES_EQUAL
@@ -355,31 +254,18 @@ extern double ldexp ();
 
 /* Convert the string X to a floating-point value.  */
 #ifndef REAL_VALUE_ATOF
-#if 1
 /* Use real.c to convert decimal numbers to binary, ... */
 REAL_VALUE_TYPE ereal_atof ();
 #define REAL_VALUE_ATOF(x, s) ereal_atof (x, s)
 /* Could use ereal_atof here for hexadecimal floats too, but real_hex_to_f
    is OK and it uses faster native fp arithmetic.  */
 /* #define REAL_VALUE_HTOF(x, s) ereal_atof (x, s) */
-#else
-/* ... or, if you like the host computer's atof, go ahead and use it: */
-#define REAL_VALUE_ATOF(x, s) atof (x)
-#if defined (MIPSEL) || defined (MIPSEB)
-/* MIPS compiler can't handle parens around the function name.
-   This problem *does not* appear to be connected with any
-   macro definition for atof.  It does not seem there is one.  */
-extern double atof ();
-#else
-extern double (atof) ();
-#endif
-#endif
 #endif
 
 /* Hexadecimal floating constant input for use with host computer's
    fp arithmetic.  */
 #ifndef REAL_VALUE_HTOF
-extern REAL_VALUE_TYPE real_hex_to_f PROTO((char *, enum machine_mode));
+extern REAL_VALUE_TYPE real_hex_to_f (char *, enum machine_mode);
 #define REAL_VALUE_HTOF(s,m) real_hex_to_f(s,m)
 #endif
 
@@ -393,7 +279,7 @@ extern REAL_VALUE_TYPE real_hex_to_f PROTO((char *, enum machine_mode));
    size and where `float' is SFmode.  */
 
 /* Don't use REAL_VALUE_TRUNCATE directly--always call real_value_truncate.  */
-extern REAL_VALUE_TYPE real_value_truncate PROTO((enum machine_mode, REAL_VALUE_TYPE));
+extern REAL_VALUE_TYPE real_value_truncate (enum machine_mode, REAL_VALUE_TYPE);
 
 #ifndef REAL_VALUE_TRUNCATE
 #define REAL_VALUE_TRUNCATE(mode, x) \
@@ -416,9 +302,9 @@ extern REAL_VALUE_TYPE real_value_truncate PROTO((enum machine_mode, REAL_VALUE_
 #define REAL_VALUE_NEGATIVE(x) (target_negative (x))
 #endif
 
-extern int target_isnan			PROTO ((REAL_VALUE_TYPE));
-extern int target_isinf			PROTO ((REAL_VALUE_TYPE));
-extern int target_negative		PROTO ((REAL_VALUE_TYPE));
+extern int target_isnan			(REAL_VALUE_TYPE);
+extern int target_isinf			(REAL_VALUE_TYPE);
+extern int target_negative		(REAL_VALUE_TYPE);
 
 /* Determine whether a floating-point value X is minus 0. */
 #ifndef REAL_VALUE_MINUS_ZERO
@@ -462,19 +348,22 @@ union real_extract
 /* Function to return a real value (not a tree node)
    from a given integer constant.  */
 union tree_node;
-REAL_VALUE_TYPE real_value_from_int_cst	PROTO ((union tree_node *,
-						union tree_node *));
+REAL_VALUE_TYPE real_value_from_int_cst	(union tree_node *,
+						union tree_node *);
 
-#define REAL_VALUE_FROM_CONST_DOUBLE(to, from)		\
-do { union real_extract u;				\
-     bcopy ((char *) &CONST_DOUBLE_LOW ((from)), (char *) &u, sizeof u); \
-     to = u.d; } while (0)
+#define REAL_VALUE_FROM_CONST_DOUBLE(to, from) \
+do { \
+    union real_extract u; \
+    for (int i = 0; i < sizeof (REAL_VALUE_TYPE) / sizeof (HOST_WIDE_INT); i++) \
+        u.i[i] = XWINT((from), 2 + i); \
+    to = u.d; \
+} while (0)
 
 /* Return a CONST_DOUBLE with value R and mode M.  */
 
 #define CONST_DOUBLE_FROM_REAL_VALUE(r, m) immed_real_const_1 (r,  m)
-extern struct rtx_def *immed_real_const_1	PROTO((REAL_VALUE_TYPE,
-						       enum machine_mode));
+extern struct rtx_def *immed_real_const_1	(REAL_VALUE_TYPE,
+						       enum machine_mode);
 
 
 /* Convert a floating point value `r', that can be interpreted
@@ -485,11 +374,11 @@ extern struct rtx_def *immed_real_const_1	PROTO((REAL_VALUE_TYPE,
 #endif
 
 /* Replace R by 1/R in the given machine mode, if the result is exact.  */
-extern int exact_real_inverse PROTO((enum machine_mode, REAL_VALUE_TYPE *));
+extern int exact_real_inverse (enum machine_mode, REAL_VALUE_TYPE *);
 
-extern void debug_real			PROTO ((REAL_VALUE_TYPE));
+extern void debug_real			(REAL_VALUE_TYPE);
 
 /* In varasm.c */
-extern void assemble_real		PROTO ((REAL_VALUE_TYPE,
-						enum machine_mode));
+extern void assemble_real		(REAL_VALUE_TYPE,
+						enum machine_mode);
 #endif /* Not REAL_H_INCLUDED */
