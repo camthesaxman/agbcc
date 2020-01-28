@@ -367,6 +367,26 @@ lang_expand_expr_t lang_expand_expr = 0;
 /* Pointer to function to finish handling an incomplete decl at the
    end of compilation.  */
 
+/* Nonzero if generating code to do profiling.  */
+
+int profile_flag = 0;
+
+/* Nonzero if generating code to do profiling on a line-by-line basis.  */
+
+int profile_block_flag;
+
+/* Nonzero if generating code to profile program flow graph arcs.  */
+
+int profile_arc_flag = 0;
+
+/* Nonzero if generating info for gcov to calculate line test coverage.  */
+
+int flag_test_coverage = 0;
+
+/* Nonzero indicates that branch taken probabilities should be calculated.  */
+
+int flag_branch_probabilities = 0;
+
 void (*incomplete_decl_finalize_hook) PROTO((tree)) = 0;
 
 /* Nonzero for -pedantic switch: warn about anything
